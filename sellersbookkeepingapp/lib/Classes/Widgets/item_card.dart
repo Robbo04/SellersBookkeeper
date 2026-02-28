@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../item.dart';
+import '../Widgets/item_detail_sheet.dart';
 
 class ItemCard extends StatelessWidget {
   final Item item;
@@ -57,6 +58,19 @@ class ItemCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => ItemDetailSheet(
+                item: item,
+                index: index,
+                onItemUpdated: () {
+                  // Trigger a rebuild of the parent widget to reflect changes
+                  (context as Element).markNeedsBuild();
+                },
+              ),
+            );
             // Handle item tap for details
           },
           child: Padding(
@@ -72,16 +86,22 @@ class ItemCard extends StatelessWidget {
                       height: 40,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: item.isSold 
-                              ? [Colors.green[400]!, Colors.green[600]!]
-                              : [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)],
+                          colors: item.isLost
+                              ? [Colors.grey[400]!, Colors.grey[600]!]
+                              : item.isSold 
+                                  ? [Colors.green[400]!, Colors.green[600]!]
+                                  : [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
-                        item.isSold ? Icons.check_circle : Icons.inventory_2,
+                        item.isLost 
+                            ? Icons.warning 
+                            : item.isSold 
+                                ? Icons.check_circle 
+                                : Icons.inventory_2,
                         color: Colors.white,
                         size: 20,
                       ),
@@ -105,7 +125,26 @@ class ItemCard extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              if (item.isSold)
+                              if (item.isLost)
+                                Container(
+                                  margin: EdgeInsets.only(left: 6),
+                                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.grey[400]!, width: 0.5),
+                                  ),
+                                  child: Text(
+                                    'LOST',
+                                    style: TextStyle(
+                                      color: Colors.grey[700],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 9,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                )
+                              else if (item.isSold)
                                 Container(
                                   margin: EdgeInsets.only(left: 6),
                                   padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -143,11 +182,17 @@ class ItemCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _buildCompactPrice('Cost', item.costPrice, Icons.shopping_cart_outlined, Colors.orange),
-                        SizedBox(height: 4),
-                        _buildCompactPrice('List', item.sellingPrice, Icons.local_offer_outlined, Colors.blue),
-                        if (item.isSold) ...[
+                        if (!item.isLost) ...[
                           SizedBox(height: 4),
-                          _buildCompactPrice('Profit', item.profit, Icons.trending_up, profitColor, isProfit: true),
+                          if (!item.isSold) ...[
+                            _buildCompactPrice('Retail', item.retailPrice, Icons.store_outlined, Colors.purple),
+                            SizedBox(height: 4),
+                          ],
+                          _buildCompactPrice('List', item.sellingPrice, Icons.local_offer_outlined, Colors.blue),
+                          if (item.isSold) ...[
+                            SizedBox(height: 4),
+                            _buildCompactPrice('Profit', item.profit, Icons.trending_up, profitColor, isProfit: true),
+                          ],
                         ],
                       ],
                     ),
@@ -177,7 +222,7 @@ class ItemCard extends StatelessWidget {
         ),
         SizedBox(width: 4),
         Text(
-          '${isProfit && amount >= 0 ? '+' : ''}\$${amount.toStringAsFixed(2)}',
+          '${isProfit && amount >= 0 ? '+' : ''}\£${amount.toStringAsFixed(2)}',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
