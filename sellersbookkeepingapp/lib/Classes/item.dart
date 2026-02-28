@@ -34,6 +34,9 @@ class Item extends HiveObject {
   @HiveField(9)
   int? daysToSell = 0;
 
+  @HiveField(10)
+  bool isLost = false;
+
   double get profit => soldPrice - costPrice;
 
   Item({
@@ -51,6 +54,14 @@ class Item extends HiveObject {
     if (!isSold) {
       soldPrice = sellingPrice;
       isSold = true;
+      soldDate = DateTime.now();
+      daysToSell = soldDate!.difference(boughtDate).inDays;
+    }
+  }
+
+  dynamic lostItem() {
+    if (!isLost) {
+      isLost = true;
       soldDate = DateTime.now();
       daysToSell = soldDate!.difference(boughtDate).inDays;
     }

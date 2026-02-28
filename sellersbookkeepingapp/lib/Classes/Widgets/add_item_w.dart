@@ -20,6 +20,7 @@ class _AddItemWidgetState extends State<AddItemWidget> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _purchasedFromController = TextEditingController();
   final TextEditingController _paidPriceController = TextEditingController();
+  final TextEditingController _retailPriceController = TextEditingController();
   final TextEditingController _listedPriceController = TextEditingController();
 
   @override
@@ -27,6 +28,7 @@ class _AddItemWidgetState extends State<AddItemWidget> {
     _nameController.dispose();
     _purchasedFromController.dispose();
     _paidPriceController.dispose();
+    _retailPriceController.dispose();
     _listedPriceController.dispose();
     super.dispose();
   }
@@ -44,6 +46,7 @@ class _AddItemWidgetState extends State<AddItemWidget> {
       boughtFrom: _purchasedFromController.text.trim(),
       costPrice: double.tryParse(_paidPriceController.text) ?? 0.0,
       sellingPrice: double.tryParse(_listedPriceController.text) ?? 0.0,
+      retailPrice: double.tryParse(_retailPriceController.text) ?? 0.0,
       boughtDate: DateTime.now(),
     );
     
@@ -52,6 +55,30 @@ class _AddItemWidgetState extends State<AddItemWidget> {
     }
     
     Navigator.pop(context);
+  }
+
+  InputDecoration _buildInputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: const Color.fromARGB(110, 227, 154, 209),
+      labelStyle: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: Theme.of(context).primaryColor,
+          width: 2,
+        ),
+      ),
+    );
   }
 
   @override
@@ -63,31 +90,57 @@ class _AddItemWidgetState extends State<AddItemWidget> {
         children: [
           TextField(
             controller: _nameController,
-            decoration: InputDecoration(labelText: 'Item Name'),
+            decoration: _buildInputDecoration('Item Name'),
             keyboardType: TextInputType.text,
           ),
-          TextField(
-            controller: _purchasedFromController,
-            decoration: InputDecoration(labelText: 'Purchased From'),
-            keyboardType: TextInputType.text,
-          ),
-          TextField(
-            controller: _paidPriceController,
-            decoration: InputDecoration(labelText: 'Paid Price'),
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+          SizedBox(height: 16),
+          
+          
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  controller: _purchasedFromController,
+                  decoration: _buildInputDecoration('Purchased From'),
+                  keyboardType: TextInputType.text,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: TextField(
+                  controller: _paidPriceController,
+                  decoration: _buildInputDecoration('Paid Price'),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                  ],
+                ),
+              ),
             ],
           ),
+          SizedBox(height: 16),
+          
           TextField(
-            controller: _listedPriceController,
-            decoration: InputDecoration(labelText: 'Listed Price'),
+            controller: _retailPriceController,
+            decoration: _buildInputDecoration('Retail Price'),
             keyboardType: TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
             ],
           ),
           SizedBox(height: 16.0),
+
+          TextField(
+            controller: _listedPriceController,
+            decoration: _buildInputDecoration('Listed Price'),
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+            ],
+          ),
+          
+          
           ElevatedButton(
             onPressed: _addItem,
             child: Text('Add Item'),
