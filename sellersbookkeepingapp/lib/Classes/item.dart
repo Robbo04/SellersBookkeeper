@@ -1,11 +1,11 @@
 class Item {
   final String name;
-  final String description;
   String boughtFrom = '';
   DateTime boughtDate;
 
   bool isSold = false;
   double sellingPrice = 0.0;
+  double retailPrice;
   double costPrice = 0.0;
   double soldPrice = 0.0;
   DateTime? soldDate;
@@ -15,9 +15,9 @@ class Item {
 
   Item({
     required this.name,
-    required this.description,
     this.boughtFrom = '',
     this.sellingPrice = 0.0,
+    this.retailPrice = 0.0,
     this.costPrice = 0.0,
     this.soldPrice = 0.0,
     required this.boughtDate,
