@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'Classes/navigation_bar.dart';
+import 'Services/storage_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Hive storage
+  await StorageService.init();
+  
   runApp(const MyApp());
 }
 

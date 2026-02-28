@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../Classes/Widgets/add_item_w.dart';
 import '../Classes/Widgets/add_box_w.dart';
 import '../Classes/item.dart';
+import '../Services/storage_service.dart';
 
 class ManageItemsPage extends StatefulWidget {
   @override
@@ -19,6 +20,13 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
       vsync: this,
       duration: Duration(milliseconds: 300),
     );
+    _loadItems();
+  }
+  
+  void _loadItems() {
+    setState(() {
+      items = StorageService.getAllItems();
+    });
   }
 
   @override
@@ -29,7 +37,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
 
   Future<void> _refreshItems() async {
     await Future.delayed(Duration(milliseconds: 500));
-    setState(() {});
+    _loadItems();
   }
 
   String _formatDate(DateTime date) {
@@ -111,10 +119,12 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
                       bottom: MediaQuery.of(context).viewInsets.bottom,
                     ),
                     child: buildAddItemWidget(
-                      onItemAdded: (newItem) {
-                        setState(() {
-                          items.insert(0, newItem);
-                        });
+                      onItemAdded: (newItem) async {
+                        // Save to storage
+                        await StorageService.addItem(newItem);
+                        // Reload items from storage
+                        _loadItems();
+                        
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Row(

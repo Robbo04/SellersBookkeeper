@@ -1,10 +1,20 @@
+import 'package:hive/hive.dart';
 import 'item.dart';
 
-class PyeBox {
+part 'pye_box.g.dart';
+
+@HiveType(typeId: 1)
+class PyeBox extends HiveObject {
+  @HiveField(0)
   final int id;
+  
+  @HiveField(1)
   final DateTime date;
+  
+  @HiveField(2)
   final List<Item> items;
 
+  @HiveField(3)
   final double totalPaidPrice;
   
   double get totalEarned => items.fold(0.00, (sum, item) => sum + item.sellingPrice);

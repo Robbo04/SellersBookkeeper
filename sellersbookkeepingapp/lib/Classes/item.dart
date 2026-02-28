@@ -1,14 +1,37 @@
-class Item {
+import 'package:hive/hive.dart';
+
+part 'item.g.dart';
+
+@HiveType(typeId: 0)
+class Item extends HiveObject {
+  @HiveField(0)
   final String name;
+  
+  @HiveField(1)
   String boughtFrom = '';
+  
+  @HiveField(2)
   DateTime boughtDate;
 
+  @HiveField(3)
   bool isSold = false;
+  
+  @HiveField(4)
   double sellingPrice = 0.0;
+  
+  @HiveField(5)
   double retailPrice;
+  
+  @HiveField(6)
   double costPrice = 0.0;
+  
+  @HiveField(7)
   double soldPrice = 0.0;
+  
+  @HiveField(8)
   DateTime? soldDate;
+  
+  @HiveField(9)
   int? daysToSell = 0;
 
   double get profit => soldPrice - costPrice;
