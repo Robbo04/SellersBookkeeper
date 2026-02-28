@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../Classes/Widgets/add_item_w.dart';
 import '../Classes/Widgets/add_box_w.dart';
+import '../Classes/Widgets/item_card.dart';
 import '../Classes/item.dart';
 import '../Services/storage_service.dart';
 
@@ -40,27 +41,10 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
     _loadItems();
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(Duration(days: 1));
-    final itemDate = DateTime(date.year, date.month, date.day);
-
-    if (itemDate == today) {
-      return 'Today';
-    } else if (itemDate == yesterday) {
-      return 'Yesterday';
-    } else if (itemDate.isAfter(today.subtract(Duration(days: 7)))) {
-      final daysAgo = today.difference(itemDate).inDays;
-      return '$daysAgo days ago';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      
       appBar: AppBar(
         title: Row(
           children: [
@@ -86,6 +70,8 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         elevation: 0,
       ),
+      
+      
       body: items.isEmpty
           ? _buildEmptyState()
           : RefreshIndicator(
@@ -94,11 +80,12 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
                 padding: EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 100),
                 itemCount: items.length,
                 itemBuilder: (context, index) {
-                  final item = items[index];
-                  return _buildItemCard(item, index);
+                  return ItemCard(item: items[index], index: index);
                 },
               ),
             ),
+      
+      
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -152,6 +139,8 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
           SizedBox(width: 16),
+          
+          
           FloatingActionButton.extended(
             heroTag: "addBox",
             onPressed: () {
@@ -207,184 +196,6 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildItemCard(Item item, int index) {
-    final profitColor = item.isSold 
-        ? (item.profit >= 0 ? Colors.green : Colors.red)
-        : Colors.grey;
-
-    return TweenAnimationBuilder(
-      duration: Duration(milliseconds: 300 + (index * 50)),
-      tween: Tween<double>(begin: 0, end: 1),
-      builder: (context, double value, child) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: Card(
-        margin: EdgeInsets.only(bottom: 12),
-        elevation: 3,
-        shadowColor: Colors.black26,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            // Handle item tap for details
-          },
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: item.isSold 
-                              ? [Colors.green[400]!, Colors.green[600]!]
-                              : [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.7)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        item.isSold ? Icons.check_circle : Icons.inventory_2,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.name,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            _formatDate(item.boughtDate),
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (item.isSold)
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.green[50],
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.green[300]!),
-                        ),
-                        child: Text(
-                          'SOLD',
-                          style: TextStyle(
-                            color: Colors.green[700],
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                
-                SizedBox(height: 12),
-                Divider(height: 1),
-                SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildPriceInfo(
-                      'Cost',
-                      item.costPrice,
-                      Icons.shopping_cart_outlined,
-                      Colors.orange,
-                    ),
-                    Container(
-                      width: 1,
-                      height: 40,
-                      color: Colors.grey[300],
-                    ),
-                    _buildPriceInfo(
-                      'List',
-                      item.sellingPrice,
-                      Icons.local_offer_outlined,
-                      Colors.blue,
-                    ),
-                    if (item.isSold) ...[
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: Colors.grey[300],
-                      ),
-                      _buildPriceInfo(
-                        'Profit',
-                        item.profit,
-                        Icons.trending_up,
-                        profitColor,
-                        isProfit: true,
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPriceInfo(String label, double amount, IconData icon, Color color, {bool isProfit = false}) {
-    return Column(
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: color),
-            SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 4),
-        Text(
-          '${isProfit && amount >= 0 ? '+' : ''}\$${amount.toStringAsFixed(2)}',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: isProfit ? color : Colors.black87,
-          ),
-        ),
-      ],
     );
   }
 }
