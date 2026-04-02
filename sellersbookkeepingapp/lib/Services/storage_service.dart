@@ -1,6 +1,7 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../Classes/item.dart';
 import '../Classes/pye_box.dart';
+import '../Enums/date_filter_type.dart';
 
 class StorageService {
   static const String itemsBoxName = 'items';
@@ -97,6 +98,90 @@ class StorageService {
   /// Get total number of boxes
   static int getTotalBoxesCount() {
     return boxesBox.length;
+  }
+  
+  // ===== DATE FILTERING OPERATIONS =====
+  
+  /// Get items filtered by date
+  static List<Item> getItemsByDateFilter(
+    DateFilterType filterType,
+    DateTime? selectedDate,
+  ) {
+    if (filterType == DateFilterType.all) {
+      return getAllItems();
+    }
+    
+    if (selectedDate == null) {
+      return getAllItems();
+    }
+    
+    final allItems = getAllItems();
+    
+    return allItems.where((item) {
+      bool matchesBoughtDate = _dateMatches(item.boughtDate, selectedDate, filterType);
+      bool matchesSoldDate = item.soldDate != null && 
+                             _dateMatches(item.soldDate!, selectedDate, filterType);
+      
+      return matchesBoughtDate || matchesSoldDate;
+    }).toList();
+  }
+  
+  /// Helper method to check if a date matches the filter
+  static bool _dateMatches(DateTime date, DateTime selected, DateFilterType filterType) {
+    switch (filterType) {
+      case DateFilterType.day:
+        return date.year == selected.year &&
+               date.month == selected.month &&
+               date.day == selected.day;
+      case DateFilterType.month:
+        return date.year == selected.year &&
+               date.month == selected.month;
+      case DateFilterType.year:
+        return date.year == selected.year;
+      case DateFilterType.all:
+        return true;
+    }
+  }
+  
+  /// Get items bought in the specified date range
+  static List<Item> getItemsBought(
+    DateFilterType filterType,
+    DateTime? selectedDate,
+  ) {
+    final filteredItems = getItemsByDateFilter(filterType, selectedDate);
+    
+    if (filterType == DateFilterType.all) {
+      return filteredItems;
+    }
+    
+    if (selectedDate == null) {
+      return filteredItems;
+    }
+    
+    return filteredItems.where((item) {
+      return _dateMatches(item.boughtDate, selectedDate, filterType);
+    }).toList();
+  }
+  
+  /// Get items sold in the specified date range
+  static List<Item> getItemsSold(
+    DateFilterType filterType,
+    DateTime? selectedDate,
+  ) {
+    final filteredItems = getItemsByDateFilter(filterType, selectedDate);
+    
+    if (filterType == DateFilterType.all) {
+      return filteredItems.where((item) => item.soldDate != null).toList();
+    }
+    
+    if (selectedDate == null) {
+      return filteredItems.where((item) => item.soldDate != null).toList();
+    }
+    
+    return filteredItems.where((item) {
+      return item.soldDate != null && 
+             _dateMatches(item.soldDate!, selectedDate, filterType);
+    }).toList();
   }
   
   /// Get count of sold items
