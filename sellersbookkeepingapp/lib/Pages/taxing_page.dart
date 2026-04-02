@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../Classes/tax.dart';
 import '../Services/taxes_service.dart';
+import '../Services/generate_tax_service.dart';
 
 class TaxingPage extends StatefulWidget {
   @override
@@ -98,6 +99,14 @@ class _TaxingPageState extends State<TaxingPage> {
                   ],
                 ),
               ),
+            ),
+            SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () async {
+                await generateTaxReport(_taxesService!);
+              },
+              icon: Icon(Icons.picture_as_pdf),
+              label: Text('Generate PDF Report'),
             ),
           ],
         ],
