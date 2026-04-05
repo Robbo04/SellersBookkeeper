@@ -60,7 +60,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${items.length}',
+                  '${items.length} ${items.length == 1 ? 'item' : 'items'}',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -151,7 +151,11 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: buildAddBoxWidget(),
+                    child: buildAddBoxWidget(
+                      onBoxAdded: () {
+                        _loadItems();
+                      },
+                    ),
                   );
                 },
               );

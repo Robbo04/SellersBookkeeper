@@ -355,7 +355,12 @@ class _TaxingPageState extends State<TaxingPage> {
             SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () async {
-                await generateTaxReport(_taxesService!);
+                await generateTaxReport(
+                  _taxesService!,
+                  _startDate!,
+                  _endDate!,
+                  _filteredItems,
+                );
               },
               icon: Icon(Icons.picture_as_pdf),
               label: Text('Generate PDF Report'),
@@ -372,3 +377,4 @@ class _TaxingPageState extends State<TaxingPage> {
     );
   }
 }
+//april the 6th - april the 5th is a tax year, so if you select april the 6th 2023 to april the 5th 2024, it should calculate tax for that year

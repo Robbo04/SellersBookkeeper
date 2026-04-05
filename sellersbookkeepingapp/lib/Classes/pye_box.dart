@@ -17,6 +17,9 @@ class PyeBox extends HiveObject {
   @HiveField(3)
   final double totalPaidPrice;
   
+  @HiveField(4, defaultValue: '')
+  final String? name;
+  
   double get totalEarned => items.fold(0.00, (sum, item) => sum + item.sellingPrice);
   double get totalProfit => totalEarned - totalPaidPrice;
 
@@ -29,5 +32,6 @@ class PyeBox extends HiveObject {
     required this.totalPaidPrice,
     required this.date,
     required this.items,
+    this.name,
   });
 }

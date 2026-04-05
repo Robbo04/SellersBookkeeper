@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../item.dart';
 import '../Widgets/item_detail_sheet.dart';
+import '../Widgets/box_detail_sheet.dart';
+import '../../Services/storage_service.dart';
 
 class ItemCard extends StatelessWidget {
   final Item item;
@@ -58,20 +60,42 @@ class ItemCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (context) => ItemDetailSheet(
-                item: item,
-                index: index,
-                onItemUpdated: () {
-                  // Trigger a rebuild of the parent widget to reflect changes
-                  (context as Element).markNeedsBuild();
-                },
-              ),
-            );
-            // Handle item tap for details
+            // Check if item belongs to a box
+            if (item.boxName != null && item.boxName!.isNotEmpty) {
+              // Find the box this item belongs to
+              final boxes = StorageService.getAllBoxes();
+              final box = boxes.firstWhere(
+                (b) => b.name == item.boxName,
+                orElse: () => boxes.first, // Fallback (shouldn't happen)
+              );
+              
+              // Show box details
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => BoxDetailSheet(
+                  box: box,
+                  onBoxUpdated: () {
+                    (context as Element).markNeedsBuild();
+                  },
+                ),
+              );
+            } else {
+              // Show item details for standalone items
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => ItemDetailSheet(
+                  item: item,
+                  index: index,
+                  onItemUpdated: () {
+                    (context as Element).markNeedsBuild();
+                  },
+                ),
+              );
+            }
           },
           child: Padding(
             padding: EdgeInsets.all(12),
@@ -166,12 +190,36 @@ class ItemCard extends StatelessWidget {
                             ],
                           ),
                           SizedBox(height: 2),
-                          Text(
-                            _formatDate(item.boughtDate),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[600],
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                _formatDate(item.boughtDate),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              if (item.boxName != null && item.boxName!.isNotEmpty) ...[
+                                SizedBox(width: 6),
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.purple[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.purple[300]!, width: 0.5),
+                                  ),
+                                  child: Text(
+                                    '${item.boxName} Box',
+                                    style: TextStyle(
+                                      color: Colors.purple[700],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 9,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),

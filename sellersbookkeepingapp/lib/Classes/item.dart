@@ -7,25 +7,25 @@ class Item extends HiveObject {
   @HiveField(0)
   final String name;
   
-  @HiveField(1)
+  @HiveField(1, defaultValue: '')
   String boughtFrom = '';
   
   @HiveField(2)
   DateTime boughtDate;
 
-  @HiveField(3)
+  @HiveField(3, defaultValue: false)
   bool isSold = false;
   
-  @HiveField(4)
+  @HiveField(4, defaultValue: 0.0)
   double sellingPrice = 0.0;
   
-  @HiveField(5)
+  @HiveField(5, defaultValue: 0.0)
   double retailPrice;
   
-  @HiveField(6)
+  @HiveField(6, defaultValue: 0.0)
   double costPrice = 0.0;
   
-  @HiveField(7)
+  @HiveField(7, defaultValue: 0.0)
   double soldPrice = 0.0;
   
   @HiveField(8)
@@ -34,8 +34,11 @@ class Item extends HiveObject {
   @HiveField(9)
   int? daysToSell = 0;
 
-  @HiveField(10)
+  @HiveField(10, defaultValue: false)
   bool isLost = false;
+
+  @HiveField(11, defaultValue: '')
+  String? boxName;
 
   double get profit => soldPrice - costPrice;
 
@@ -48,6 +51,7 @@ class Item extends HiveObject {
     this.soldPrice = 0.0,
     required this.boughtDate,
     this.soldDate,
+    this.boxName,
   });
 
   dynamic soldItem() {
