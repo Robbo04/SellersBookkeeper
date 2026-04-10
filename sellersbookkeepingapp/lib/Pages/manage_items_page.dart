@@ -41,6 +41,92 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
     _loadItems();
   }
 
+  void _showClearAllConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Clear All Data'),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to delete all items and boxes? This action cannot be undone.',
+            style: TextStyle(fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _clearAllData();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Clear All'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _clearAllData() async {
+    try {
+      await StorageService.clearAllItems();
+      await StorageService.clearAllBoxes();
+      _loadItems();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('All data cleared successfully'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Failed to clear data: $e'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,6 +155,29 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
         ),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         elevation: 0,
+        actions: [
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert),
+            tooltip: 'Developer Tools',
+            onSelected: (value) {
+              if (value == 'clear_all') {
+                _showClearAllConfirmation();
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem<String>(
+                value: 'clear_all',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_sweep, color: Colors.red),
+                    SizedBox(width: 12),
+                    Text('Clear All Data', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       
       

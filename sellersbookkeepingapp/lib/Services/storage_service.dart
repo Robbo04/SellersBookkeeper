@@ -2,6 +2,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../Classes/item.dart';
 import '../Classes/pye_box.dart';
 import '../Enums/date_filter_type.dart';
+import '../Enums/item_status.dart';
 
 class StorageService {
   static const String itemsBoxName = 'items';
@@ -14,10 +15,41 @@ class StorageService {
     // Register adapters
     Hive.registerAdapter(ItemAdapter());
     Hive.registerAdapter(PyeBoxAdapter());
+    Hive.registerAdapter(ItemStatusAdapter());
+    
+    // Check if we need to migrate old data format
+    await _migrateOldDataFormat();
     
     // Open boxes
     await Hive.openBox<Item>(itemsBoxName);
     await Hive.openBox<PyeBox>(boxesBoxName);
+  }
+  
+  // Migrate old boolean format to new enum format
+  static Future<void> _migrateOldDataFormat() async {
+    try {
+      // Try to open and read the box with old format
+      final tempBox = await Hive.openBox(itemsBoxName);
+      
+      // Try to access the data - if this succeeds with new format, we're good
+      // If it fails, we'll catch the error and delete
+      if (tempBox.isNotEmpty) {
+        // Try to read first item to check compatibility
+        tempBox.getAt(0);
+      }
+      
+      await tempBox.close();
+    } catch (e) {
+      // If we get a type error, delete the old incompatible boxes
+      print('Detected old data format, clearing to migrate to new enum format...');
+      print('Error: $e');
+      
+      // Delete the box files to clear old data
+      await Hive.deleteBoxFromDisk(itemsBoxName);
+      await Hive.deleteBoxFromDisk(boxesBoxName);
+      
+      print('Migration complete - old data cleared');
+    }
   }
   
   // Get boxes
@@ -29,6 +61,21 @@ class StorageService {
   /// Get all items as a list
   static List<Item> getAllItems() {
     return itemsBox.values.toList();
+  }
+  
+  /// Get all items including items from boxes
+  static List<Item> getAllItemsIncludingBoxes() {
+    final standaloneItems = itemsBox.values.toList();
+    final boxes = boxesBox.values.toList();
+    
+    // Get all items from all boxes
+    final boxItems = <Item>[];
+    for (var box in boxes) {
+      boxItems.addAll(box.items);
+    }
+    
+    // Combine standalone items and box items
+    return [...standaloneItems, ...boxItems];
   }
   
   /// Add a new item

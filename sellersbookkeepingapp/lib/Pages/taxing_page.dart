@@ -39,10 +39,21 @@ class _TaxingPageState extends State<TaxingPage> {
     }
 
     // Get all items
-    final allItems = StorageService.getAllItems();
+    final allItems = StorageService.getAllItemsIncludingBoxes();
     
-    // Filter items sold within the date range
-    final filtered = allItems.where((item) {
+    final startDate = DateTime(
+      _startDate!.year,
+      _startDate!.month,
+      _startDate!.day,
+    );
+    final endDate = DateTime(
+      _endDate!.year,
+      _endDate!.month,
+      _endDate!.day,
+    );
+    
+    // Filter items sold within the date range (for revenue)
+    final itemsSold = allItems.where((item) {
       if (item.soldDate == null) return false;
       
       final soldDate = DateTime(
@@ -50,26 +61,34 @@ class _TaxingPageState extends State<TaxingPage> {
         item.soldDate!.month,
         item.soldDate!.day,
       );
-      final startDate = DateTime(
-        _startDate!.year,
-        _startDate!.month,
-        _startDate!.day,
-      );
-      final endDate = DateTime(
-        _endDate!.year,
-        _endDate!.month,
-        _endDate!.day,
-      );
       
       return (soldDate.isAfter(startDate) || soldDate.isAtSameMomentAs(startDate)) &&
              (soldDate.isBefore(endDate) || soldDate.isAtSameMomentAs(endDate));
     }).toList();
     
-    // Calculate total profit (income for tax purposes)
-    final income = filtered.fold(0.0, (sum, item) => sum + item.profit);
+    // Filter items bought within the date range (for costs)
+    final itemsBought = allItems.where((item) {
+      final boughtDate = DateTime(
+        item.boughtDate.year,
+        item.boughtDate.month,
+        item.boughtDate.day,
+      );
+      
+      return (boughtDate.isAfter(startDate) || boughtDate.isAtSameMomentAs(startDate)) &&
+             (boughtDate.isBefore(endDate) || boughtDate.isAtSameMomentAs(endDate));
+    }).toList();
+    
+    // Calculate total revenue (money made from sales)
+    final totalRevenue = itemsSold.fold(0.0, (sum, item) => sum + item.soldPrice);
+    
+    // Calculate total costs (money spent on purchases)
+    final totalCosts = itemsBought.fold(0.0, (sum, item) => sum + item.costPrice);
+    
+    // Taxable income = revenue - costs
+    final income = totalRevenue - totalCosts;
     
     setState(() {
-      _filteredItems = filtered;
+      _filteredItems = itemsSold; // Keep sold items for display
       _totalIncome = income;
       _taxesService = TaxesService(income);
       _calculated = true;
@@ -359,7 +378,7 @@ class _TaxingPageState extends State<TaxingPage> {
                   _taxesService!,
                   _startDate!,
                   _endDate!,
-                  _filteredItems,
+                  StorageService.getAllItemsIncludingBoxes(),
                 );
               },
               icon: Icon(Icons.picture_as_pdf),

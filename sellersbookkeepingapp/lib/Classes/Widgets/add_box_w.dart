@@ -142,11 +142,6 @@ class _AddBoxWidgetState extends State<AddBoxWidget> {
     // Save box to storage
     await StorageService.addBox(newBox);
 
-    // Also save each item individually to the items collection
-    for (var item in _itemsInBox) {
-      await StorageService.addItem(item);
-    }
-
     widget.onBoxAdded?.call();
     Navigator.pop(context);
 

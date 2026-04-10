@@ -26,16 +26,14 @@ class ItemAdapter extends TypeAdapter<Item> {
       boughtDate: fields[2] as DateTime,
       soldDate: fields[8] as DateTime?,
       boxName: fields[11] == null ? '' : fields[11] as String?,
-    )
-      ..isSold = fields[3] == null ? false : fields[3] as bool
-      ..daysToSell = fields[9] as int?
-      ..isLost = fields[10] == null ? false : fields[10] as bool;
+      status: fields[3] == null ? ItemStatus.listed : fields[3] as ItemStatus,
+    )..daysToSell = fields[9] as int?;
   }
 
   @override
   void write(BinaryWriter writer, Item obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.name)
       ..writeByte(1)
@@ -43,7 +41,7 @@ class ItemAdapter extends TypeAdapter<Item> {
       ..writeByte(2)
       ..write(obj.boughtDate)
       ..writeByte(3)
-      ..write(obj.isSold)
+      ..write(obj.status)
       ..writeByte(4)
       ..write(obj.sellingPrice)
       ..writeByte(5)
@@ -56,8 +54,6 @@ class ItemAdapter extends TypeAdapter<Item> {
       ..write(obj.soldDate)
       ..writeByte(9)
       ..write(obj.daysToSell)
-      ..writeByte(10)
-      ..write(obj.isLost)
       ..writeByte(11)
       ..write(obj.boxName);
   }

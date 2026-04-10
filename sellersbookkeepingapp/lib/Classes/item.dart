@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import '../Enums/item_status.dart';
 
 part 'item.g.dart';
 
@@ -13,8 +14,8 @@ class Item extends HiveObject {
   @HiveField(2)
   DateTime boughtDate;
 
-  @HiveField(3, defaultValue: false)
-  bool isSold = false;
+  @HiveField(3, defaultValue: ItemStatus.listed)
+  ItemStatus status = ItemStatus.listed;
   
   @HiveField(4, defaultValue: 0.0)
   double sellingPrice = 0.0;
@@ -34,11 +35,12 @@ class Item extends HiveObject {
   @HiveField(9)
   int? daysToSell = 0;
 
-  @HiveField(10, defaultValue: false)
-  bool isLost = false;
-
   @HiveField(11, defaultValue: '')
   String? boxName;
+
+  // Convenience getters for backward compatibility
+  bool get isSold => status == ItemStatus.sold;
+  bool get isLost => status == ItemStatus.lost;
 
   double get profit => soldPrice - costPrice;
 
@@ -52,27 +54,28 @@ class Item extends HiveObject {
     required this.boughtDate,
     this.soldDate,
     this.boxName,
+    this.status = ItemStatus.listed,
   });
 
   dynamic soldItem() {
-    if (!isSold) {
+    if (status != ItemStatus.sold) {
       soldPrice = sellingPrice;
-      isSold = true;
+      status = ItemStatus.sold;
       soldDate = DateTime.now();
       daysToSell = soldDate!.difference(boughtDate).inDays;
     }
   }
 
   dynamic lostItem() {
-    if (!isLost) {
-      isLost = true;
+    if (status != ItemStatus.lost) {
+      status = ItemStatus.lost;
       soldDate = DateTime.now();
       daysToSell = soldDate!.difference(boughtDate).inDays;
     }
   }
 
   changeSellingPrice(double newPrice) {
-   if (!isSold) {
+   if (status != ItemStatus.sold) {
     if (newPrice <= 0) {
       // Show a warning dialog or message to the user
       print('Error: Selling price must be greater than zero.');

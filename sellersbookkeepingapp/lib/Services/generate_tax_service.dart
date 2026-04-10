@@ -20,7 +20,7 @@ class MonthlyData {
   });
 }
 
-List<MonthlyData> _calculateMonthlyData(DateTime startDate, DateTime endDate, List<Item> items) {
+List<MonthlyData> _calculateMonthlyData(DateTime startDate, DateTime endDate, List<Item> allItems) {
   List<MonthlyData> monthlyDataList = [];
   double runningProfit = 0.0;
   
@@ -41,8 +41,8 @@ List<MonthlyData> _calculateMonthlyData(DateTime startDate, DateTime endDate, Li
       monthEnd = endDate;
     }
     
-    // Filter items for this month
-    final monthItems = items.where((item) {
+    // Filter items SOLD in this month (for revenue)
+    final itemsSold = allItems.where((item) {
       if (item.soldDate == null) return false;
       
       final soldDate = DateTime(
@@ -55,9 +55,21 @@ List<MonthlyData> _calculateMonthlyData(DateTime startDate, DateTime endDate, Li
              (soldDate.isBefore(monthEnd) || soldDate.isAtSameMomentAs(monthEnd));
     }).toList();
     
-    // Calculate revenue and amount spent for this month
-    double revenue = monthItems.fold(0.0, (sum, item) => sum + item.soldPrice);
-    double amountSpent = monthItems.fold(0.0, (sum, item) => sum + item.costPrice);
+    // Filter items BOUGHT in this month (for costs)
+    final itemsBought = allItems.where((item) {
+      final boughtDate = DateTime(
+        item.boughtDate.year,
+        item.boughtDate.month,
+        item.boughtDate.day,
+      );
+      
+      return (boughtDate.isAfter(monthStart) || boughtDate.isAtSameMomentAs(monthStart)) &&
+             (boughtDate.isBefore(monthEnd) || boughtDate.isAtSameMomentAs(monthEnd));
+    }).toList();
+    
+    // Calculate revenue (money made from sales) and costs (money spent on purchases)
+    double revenue = itemsSold.fold(0.0, (sum, item) => sum + item.soldPrice);
+    double amountSpent = itemsBought.fold(0.0, (sum, item) => sum + item.costPrice);
     double monthlyProfit = revenue - amountSpent;
     runningProfit += monthlyProfit;
     
@@ -84,9 +96,9 @@ Future<void> generateTaxReport(
   TaxesService taxService,
   DateTime startDate,
   DateTime endDate,
-  List<Item> filteredItems,
+  List<Item> allItems,
 ) async {
-  final monthlyData = _calculateMonthlyData(startDate, endDate, filteredItems);
+  final monthlyData = _calculateMonthlyData(startDate, endDate, allItems);
   final pdf = pw.Document();
   
   pdf.addPage(
