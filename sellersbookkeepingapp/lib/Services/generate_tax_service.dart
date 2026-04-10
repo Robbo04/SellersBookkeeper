@@ -3,6 +3,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'taxes_service.dart';
 import '../Classes/item.dart';
+import 'storage_service.dart';
 
 class MonthlyData {
   final String month;
@@ -23,6 +24,9 @@ class MonthlyData {
 List<MonthlyData> _calculateMonthlyData(DateTime startDate, DateTime endDate, List<Item> allItems) {
   List<MonthlyData> monthlyDataList = [];
   double runningProfit = 0.0;
+  
+  // Get all expenses
+  final allExpenses = StorageService.getAllExpenses();
   
   // Get the first month and year
   DateTime currentMonth = DateTime(startDate.year, startDate.month, 1);
@@ -67,9 +71,23 @@ List<MonthlyData> _calculateMonthlyData(DateTime startDate, DateTime endDate, Li
              (boughtDate.isBefore(monthEnd) || boughtDate.isAtSameMomentAs(monthEnd));
     }).toList();
     
-    // Calculate revenue (money made from sales) and costs (money spent on purchases)
+    // Filter expenses in this month
+    final monthExpenses = allExpenses.where((expense) {
+      final expenseDate = DateTime(
+        expense.date.year,
+        expense.date.month,
+        expense.date.day,
+      );
+      
+      return (expenseDate.isAfter(monthStart) || expenseDate.isAtSameMomentAs(monthStart)) &&
+             (expenseDate.isBefore(monthEnd) || expenseDate.isAtSameMomentAs(monthEnd));
+    }).toList();
+    
+    // Calculate revenue (money made from sales) and costs (money spent on purchases + expenses)
     double revenue = itemsSold.fold(0.0, (sum, item) => sum + item.soldPrice);
-    double amountSpent = itemsBought.fold(0.0, (sum, item) => sum + item.costPrice);
+    double itemCosts = itemsBought.fold(0.0, (sum, item) => sum + item.costPrice);
+    double expenseCosts = monthExpenses.fold(0.0, (sum, expense) => sum + expense.amount);
+    double amountSpent = itemCosts + expenseCosts;
     double monthlyProfit = revenue - amountSpent;
     runningProfit += monthlyProfit;
     

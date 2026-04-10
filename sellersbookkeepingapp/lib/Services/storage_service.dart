@@ -1,12 +1,14 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../Classes/item.dart';
 import '../Classes/pye_box.dart';
+import '../Classes/expense.dart';
 import '../Enums/date_filter_type.dart';
 import '../Enums/item_status.dart';
 
 class StorageService {
   static const String itemsBoxName = 'items';
   static const String boxesBoxName = 'boxes';
+  static const String expensesBoxName = 'expenses';
   
   // Initialize Hive
   static Future<void> init() async {
@@ -16,6 +18,7 @@ class StorageService {
     Hive.registerAdapter(ItemAdapter());
     Hive.registerAdapter(PyeBoxAdapter());
     Hive.registerAdapter(ItemStatusAdapter());
+    Hive.registerAdapter(ExpenseAdapter());
     
     // Check if we need to migrate old data format
     await _migrateOldDataFormat();
@@ -23,6 +26,7 @@ class StorageService {
     // Open boxes
     await Hive.openBox<Item>(itemsBoxName);
     await Hive.openBox<PyeBox>(boxesBoxName);
+    await Hive.openBox<Expense>(expensesBoxName);
   }
   
   // Migrate old boolean format to new enum format
@@ -55,6 +59,7 @@ class StorageService {
   // Get boxes
   static Box<Item> get itemsBox => Hive.box<Item>(itemsBoxName);
   static Box<PyeBox> get boxesBox => Hive.box<PyeBox>(boxesBoxName);
+  static Box<Expense> get expensesBox => Hive.box<Expense>(expensesBoxName);
   
   // ===== ITEMS OPERATIONS =====
   
@@ -133,6 +138,38 @@ class StorageService {
   /// Clear all boxes
   static Future<void> clearAllBoxes() async {
     await boxesBox.clear();
+  }
+  
+  // ===== EXPENSES OPERATIONS =====
+  
+  /// Get all expenses as a list
+  static List<Expense> getAllExpenses() {
+    return expensesBox.values.toList();
+  }
+  
+  /// Add a new expense
+  static Future<void> addExpense(Expense expense) async {
+    await expensesBox.add(expense);
+  }
+  
+  /// Update an existing expense
+  static Future<void> updateExpense(int index, Expense expense) async {
+    await expensesBox.putAt(index, expense);
+  }
+  
+  /// Delete an expense by index
+  static Future<void> deleteExpense(int index) async {
+    await expensesBox.deleteAt(index);
+  }
+  
+  /// Delete an expense by key
+  static Future<void> deleteExpenseByKey(dynamic key) async {
+    await expensesBox.delete(key);
+  }
+  
+  /// Clear all expenses
+  static Future<void> clearAllExpenses() async {
+    await expensesBox.clear();
   }
   
   // ===== UTILITY OPERATIONS =====
@@ -240,5 +277,6 @@ class StorageService {
   static Future<void> closeAll() async {
     await itemsBox.close();
     await boxesBox.close();
+    await expensesBox.close();
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../Classes/Widgets/add_item_w.dart';
 import '../Classes/Widgets/add_box_w.dart';
+import '../Classes/Widgets/add_expense_w.dart';
 import '../Classes/Widgets/item_card.dart';
 import '../Classes/item.dart';
 import '../Services/storage_service.dart';
@@ -85,6 +86,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
     try {
       await StorageService.clearAllItems();
       await StorageService.clearAllBoxes();
+      await StorageService.clearAllExpenses();
       _loadItems();
       
       if (mounted) {
@@ -199,6 +201,36 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           FloatingActionButton.extended(
+            heroTag: "AddExpense",
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (BuildContext context) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                    ),
+                    child: buildAddExpenseWidget(
+                      onExpenseAdded: () {
+                        _loadItems();
+                      },
+                    ),
+                  );
+                },
+              );
+            },
+            icon: Icon(Icons.add),
+            label: Text('Expense'),
+            backgroundColor: Colors.orange,
+          ),
+          SizedBox(width: 12),
+          FloatingActionButton.extended(
             heroTag: "AddItem",
             onPressed: () {
               showModalBottomSheet(
@@ -244,10 +276,10 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
               );
             },
             icon: Icon(Icons.add),
-            label: Text('Add Item'),
+            label: Text('Item'),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
-          SizedBox(width: 16),
+          SizedBox(width: 12),
           
           
           FloatingActionButton.extended(
@@ -269,8 +301,8 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
                 },
               );
             },
-            icon: Icon(Icons.add_box),
-            label: Text('Add Box'),
+            icon: Icon(Icons.add),
+            label: Text('Box'),
             backgroundColor: Theme.of(context).colorScheme.secondary,
           ),
         ],

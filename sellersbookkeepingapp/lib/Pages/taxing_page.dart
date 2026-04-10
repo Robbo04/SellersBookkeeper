@@ -84,8 +84,23 @@ class _TaxingPageState extends State<TaxingPage> {
     // Calculate total costs (money spent on purchases)
     final totalCosts = itemsBought.fold(0.0, (sum, item) => sum + item.costPrice);
     
-    // Taxable income = revenue - costs
-    final income = totalRevenue - totalCosts;
+    // Add other expenses within the date range
+    final expenses = StorageService.getAllExpenses();
+    final filteredExpenses = expenses.where((expense) {
+      final expenseDate = DateTime(
+        expense.date.year,
+        expense.date.month,
+        expense.date.day,
+      );
+      
+      return (expenseDate.isAfter(startDate) || expenseDate.isAtSameMomentAs(startDate)) &&
+             (expenseDate.isBefore(endDate) || expenseDate.isAtSameMomentAs(endDate));
+    }).toList();
+    
+    final totalExpenses = filteredExpenses.fold(0.0, (sum, expense) => sum + expense.amount);
+    
+    // Taxable income = revenue - (costs + expenses)
+    final income = totalRevenue - totalCosts - totalExpenses;
     
     setState(() {
       _filteredItems = itemsSold; // Keep sold items for display
