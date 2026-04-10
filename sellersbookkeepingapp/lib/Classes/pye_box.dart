@@ -20,7 +20,7 @@ class PyeBox extends HiveObject {
   @HiveField(4, defaultValue: '')
   final String? name;
   
-  double get totalEarned => items.fold(0.00, (sum, item) => sum + item.sellingPrice);
+  double get totalEarned => items.where((item) => item.isSold).fold(0.00, (sum, item) => sum + item.soldPrice);
   double get totalProfit => totalEarned - totalPaidPrice;
 
   int get totalItems => items.length;
