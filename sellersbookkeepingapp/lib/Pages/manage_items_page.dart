@@ -3,7 +3,9 @@ import '../Classes/Widgets/add_item_w.dart';
 import '../Classes/Widgets/add_box_w.dart';
 import '../Classes/Widgets/add_expense_w.dart';
 import '../Classes/Widgets/item_card.dart';
+import '../Classes/Widgets/expense_card.dart';
 import '../Classes/item.dart';
+import '../Classes/expense.dart';
 import '../Services/storage_service.dart';
 
 class ManageItemsPage extends StatefulWidget {
@@ -13,6 +15,7 @@ class ManageItemsPage extends StatefulWidget {
 
 class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProviderStateMixin {
   List<Item> items = [];
+  List<Expense> expenses = [];
   late AnimationController _animationController;
 
   @override
@@ -28,6 +31,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
   void _loadItems() {
     setState(() {
       items = StorageService.getAllItems();
+      expenses = StorageService.getAllExpenses();
     });
   }
 
@@ -139,17 +143,49 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
             Icon(Icons.inventory_2, size: 24),
             SizedBox(width: 8),
             Text('Manage Items'),
-            if (items.isNotEmpty) ...[
+            if (items.isNotEmpty || expenses.isNotEmpty) ...[
               SizedBox(width: 8),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${items.length} ${items.length == 1 ? 'item' : 'items'}',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (items.isNotEmpty)
+                      Flexible(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '${items.length} ${items.length == 1 ? 'item' : 'items'}',
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (items.isNotEmpty && expenses.isNotEmpty)
+                      SizedBox(width: 4),
+                    if (expenses.isNotEmpty)
+                      Flexible(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '${expenses.length} ${expenses.length == 1 ? 'expense' : 'expenses'}',
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
@@ -183,16 +219,117 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
       ),
       
       
-      body: items.isEmpty
+      body: items.isEmpty && expenses.isEmpty
           ? _buildEmptyState()
           : RefreshIndicator(
               onRefresh: _refreshItems,
-              child: ListView.builder(
-                padding: EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 100),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  return ItemCard(item: items[index], index: index);
-                },
+              child: CustomScrollView(
+                slivers: [
+                  // Expenses Section
+                  if (expenses.isNotEmpty) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: Row(
+                          children: [
+                            Icon(Icons.receipt_long, color: Colors.orange, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Expenses',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${expenses.length}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange[800],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            return ExpenseCard(
+                              expense: expenses[index], 
+                              index: index,
+                              onExpenseUpdated: _loadItems,
+                            );
+                          },
+                          childCount: expenses.length,
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  ],
+                  
+                  // Items Section
+                  if (items.isNotEmpty) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        child: Row(
+                          children: [
+                            Icon(Icons.inventory_2, color: Theme.of(context).colorScheme.primary, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Items',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${items.length}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: EdgeInsets.only(left: 12, right: 12, bottom: 100),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            return ItemCard(item: items[index], index: index);
+                          },
+                          childCount: items.length,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
       
@@ -323,7 +460,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
           ),
           SizedBox(height: 16),
           Text(
-            'No items yet',
+            'No items or expenses yet',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -332,7 +469,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
           ),
           SizedBox(height: 8),
           Text(
-            'Tap the "Add Item" button to get started',
+            'Add items, expenses, or boxes to get started',
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey[500],

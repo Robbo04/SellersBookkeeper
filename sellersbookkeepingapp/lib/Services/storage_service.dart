@@ -144,6 +144,9 @@ class StorageService {
   
   /// Get all expenses as a list
   static List<Expense> getAllExpenses() {
+    if (!Hive.isBoxOpen(expensesBoxName)) {
+      return [];
+    }
     return expensesBox.values.toList();
   }
   
