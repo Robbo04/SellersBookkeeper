@@ -30,7 +30,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
   
   void _loadItems() {
     setState(() {
-      items = StorageService.getAllItems();
+      items = StorageService.getAllItemsIncludingBoxes();
       expenses = StorageService.getAllExpenses();
     });
   }

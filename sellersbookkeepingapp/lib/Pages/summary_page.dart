@@ -18,7 +18,7 @@ class _SummaryPageState extends State<SummaryPage> {
   
   void _loadItems() {
     setState(() {
-      allItems = StorageService.getAllItems();
+      allItems = StorageService.getAllItemsIncludingBoxes();
     });
   }
   
@@ -28,8 +28,19 @@ class _SummaryPageState extends State<SummaryPage> {
   // Calculate total revenue
   double get totalRevenue => allItems.fold(0.0, (sum, item) => sum + item.soldPrice);
   
-  // Calculate total spent
-  double get totalSpent => allItems.fold(0.0, (sum, item) => sum + item.costPrice);
+  // Calculate total spent (including box costs)
+  double get totalSpent {
+    // Get standalone items cost
+    final standaloneItemsCost = allItems
+        .where((item) => item.boxName == null || item.boxName!.isEmpty)
+        .fold(0.0, (sum, item) => sum + item.costPrice);
+    
+    // Get all box costs
+    final boxes = StorageService.getAllBoxes();
+    final boxCosts = boxes.fold(0.0, (sum, box) => sum + box.totalPaidPrice);
+    
+    return standaloneItemsCost + boxCosts;
+  }
   
   // Calculate total profit
   double get totalProfit => allItems.where((item) => item.isSold).fold(0.0, (sum, item) => sum + item.profit);

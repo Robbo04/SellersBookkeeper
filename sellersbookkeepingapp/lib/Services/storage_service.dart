@@ -148,6 +148,46 @@ class StorageService {
     await boxesBox.clear();
   }
   
+  /// Update an item within a box by finding the box and item
+  static Future<void> updateItemInBox(String boxName, String itemName, Item updatedItem) async {
+    final boxes = getAllBoxes();
+    
+    for (int i = 0; i < boxes.length; i++) {
+      final box = boxes[i];
+      if (box.name == boxName) {
+        // Find the item in this box
+        final itemIndex = box.items.indexWhere((item) => item.name == itemName);
+        if (itemIndex != -1) {
+          // Update the item in the box
+          box.items[itemIndex] = updatedItem;
+          // Save the updated box
+          await updateBox(i, box);
+          return;
+        }
+      }
+    }
+  }
+  
+  /// Update an item from the combined list (handles both standalone and box items)
+  static Future<void> updateItemFromCombinedList(Item itemToUpdate) async {
+    // Check if item is in a box
+    if (itemToUpdate.boxName != null && itemToUpdate.boxName!.isNotEmpty) {
+      // Update item in box
+      await updateItemInBox(itemToUpdate.boxName!, itemToUpdate.name, itemToUpdate);
+    } else {
+      // Find the item in standalone items
+      final standaloneItems = getAllItems();
+      final index = standaloneItems.indexWhere((item) => 
+        item.name == itemToUpdate.name && 
+        item.boughtDate == itemToUpdate.boughtDate
+      );
+      
+      if (index != -1) {
+        await updateItem(index, itemToUpdate);
+      }
+    }
+  }
+  
   // ===== EXPENSES OPERATIONS =====
   
   /// Get all expenses as a list

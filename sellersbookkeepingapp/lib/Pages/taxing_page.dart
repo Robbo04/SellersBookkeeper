@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../Classes/item.dart';
 import '../Classes/expense.dart';
+import '../Classes/pye_box.dart';
 import '../Services/taxes_service.dart';
 import '../Services/generate_tax_service.dart';
 import '../Services/storage_service.dart';
@@ -18,6 +19,7 @@ class _TaxingPageState extends State<TaxingPage> {
   bool _calculated = false;
   List<Item> _itemsSold = [];
   List<Item> _itemsBought = [];
+  List<PyeBox> _boxesBought = [];
   List<Expense> _filteredExpenses = [];
   double _totalRevenue = 0.0;
   double _totalCosts = 0.0;
@@ -90,7 +92,27 @@ class _TaxingPageState extends State<TaxingPage> {
     final totalRevenue = itemsSold.fold(0.0, (sum, item) => sum + item.soldPrice);
     
     // Calculate total costs (money spent on purchases)
-    final totalCosts = itemsBought.fold(0.0, (sum, item) => sum + item.costPrice);
+    // For standalone items, use their cost price
+    final standaloneItemsCost = itemsBought
+        .where((item) => item.boxName == null || item.boxName!.isEmpty)
+        .fold(0.0, (sum, item) => sum + item.costPrice);
+    
+    // For boxes, get all boxes bought in the date range and add their totalPaidPrice
+    final allBoxes = StorageService.getAllBoxes();
+    final boxesBought = allBoxes.where((box) {
+      final boxDate = DateTime(
+        box.date.year,
+        box.date.month,
+        box.date.day,
+      );
+      
+      return (boxDate.isAfter(startDate) || boxDate.isAtSameMomentAs(startDate)) &&
+             (boxDate.isBefore(endDate) || boxDate.isAtSameMomentAs(endDate));
+    }).toList();
+    
+    final boxCosts = boxesBought.fold(0.0, (sum, box) => sum + box.totalPaidPrice);
+    
+    final totalCosts = standaloneItemsCost + boxCosts;
     
     // Add other expenses within the date range
     final expenses = StorageService.getAllExpenses();
@@ -113,6 +135,7 @@ class _TaxingPageState extends State<TaxingPage> {
     setState(() {
       _itemsSold = itemsSold;
       _itemsBought = itemsBought;
+      _boxesBought = boxesBought;
       _filteredExpenses = filteredExpenses;
       _totalRevenue = totalRevenue;
       _totalCosts = totalCosts;
@@ -419,7 +442,7 @@ class _TaxingPageState extends State<TaxingPage> {
                           ),
                         ),
                         SizedBox(height: 8),
-                        if (_itemsBought.isEmpty)
+                        if (_itemsBought.isEmpty && _boxesBought.isEmpty)
                           Padding(
                             padding: EdgeInsets.only(left: 16, bottom: 8),
                             child: Text(
@@ -427,8 +450,14 @@ class _TaxingPageState extends State<TaxingPage> {
                               style: TextStyle(color: Colors.grey[600], fontStyle: FontStyle.italic),
                             ),
                           )
-                        else
-                          ..._itemsBought.asMap().entries.map((entry) {
+                        else ...[                          
+                          // Standalone items
+                          ..._itemsBought
+                              .where((item) => item.boxName == null || item.boxName!.isEmpty)
+                              .toList()
+                              .asMap()
+                              .entries
+                              .map((entry) {
                             final index = entry.key;
                             final item = entry.value;
                             return Padding(
@@ -439,6 +468,20 @@ class _TaxingPageState extends State<TaxingPage> {
                               ),
                             );
                           }).toList(),
+                          // Boxes
+                          ..._boxesBought.asMap().entries.map((entry) {
+                            final standaloneCount = _itemsBought.where((item) => item.boxName == null || item.boxName!.isEmpty).length;
+                            final index = entry.key;
+                            final box = entry.value;
+                            return Padding(
+                              padding: EdgeInsets.only(left: 16, bottom: 4),
+                              child: Text(
+                                '${standaloneCount + index + 1}) ${box.name ?? "Box"} (${box.items.length} items): £${box.totalPaidPrice.toStringAsFixed(2)}',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.purple[700]),
+                              ),
+                            );
+                          }).toList(),
+                        ],
                         Padding(
                           padding: EdgeInsets.only(left: 16, top: 4, bottom: 16),
                           child: Text(

@@ -52,7 +52,7 @@ class ItemDetailSheet extends StatelessWidget {
             color: Colors.green,
             onPressed: () {
               item.soldItem();
-              StorageService.updateItem(index, item);
+              StorageService.updateItemFromCombinedList(item);
               onItemUpdated();
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -83,7 +83,7 @@ class ItemDetailSheet extends StatelessWidget {
             color: Colors.red,
             onPressed: () {
               item.lostItem();
-              StorageService.updateItem(index, item);
+              StorageService.updateItemFromCombinedList(item);
               onItemUpdated();
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -145,7 +145,7 @@ class ItemDetailSheet extends StatelessWidget {
           TextButton(
             onPressed: () {
               item.changeSellingPrice(double.parse(controller.text));
-              StorageService.updateItem(index, item);
+              StorageService.updateItemFromCombinedList(item);
               onItemUpdated();
               Navigator.pop(context);
               Navigator.pop(context);

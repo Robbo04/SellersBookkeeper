@@ -86,7 +86,28 @@ List<MonthlyData> _calculateMonthlyData(DateTime startDate, DateTime endDate, Li
     
     // Calculate revenue (money made from sales) and costs (money spent on purchases + expenses)
     double revenue = itemsSold.fold(0.0, (sum, item) => sum + item.soldPrice);
-    double itemCosts = itemsBought.fold(0.0, (sum, item) => sum + item.costPrice);
+    
+    // For standalone items, use their cost price
+    double standaloneItemsCost = itemsBought
+        .where((item) => item.boxName == null || item.boxName!.isEmpty)
+        .fold(0.0, (sum, item) => sum + item.costPrice);
+    
+    // For boxes bought in this month, add their totalPaidPrice
+    final allBoxes = StorageService.getAllBoxes();
+    final boxesBought = allBoxes.where((box) {
+      final boxDate = DateTime(
+        box.date.year,
+        box.date.month,
+        box.date.day,
+      );
+      
+      return (boxDate.isAfter(monthStart) || boxDate.isAtSameMomentAs(monthStart)) &&
+             (boxDate.isBefore(monthEnd) || boxDate.isAtSameMomentAs(monthEnd));
+    }).toList();
+    
+    double boxCosts = boxesBought.fold(0.0, (sum, box) => sum + box.totalPaidPrice);
+    
+    double itemCosts = standaloneItemsCost + boxCosts;
     double expenseCosts = monthExpenses.fold(0.0, (sum, expense) => sum + expense.amount);
     double amountSpent = itemCosts + expenseCosts;
     double monthlyProfit = revenue - amountSpent;
