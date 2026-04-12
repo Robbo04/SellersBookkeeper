@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../Classes/item.dart';
+import '../Classes/expense.dart';
 import '../Services/taxes_service.dart';
 import '../Services/generate_tax_service.dart';
 import '../Services/storage_service.dart';
+import '../Classes/Widgets/tax_management_dialog.dart';
 
 class TaxingPage extends StatefulWidget {
   @override
@@ -14,7 +16,12 @@ class _TaxingPageState extends State<TaxingPage> {
   DateTime? _endDate;
   TaxesService? _taxesService;
   bool _calculated = false;
-  List<Item> _filteredItems = [];
+  List<Item> _itemsSold = [];
+  List<Item> _itemsBought = [];
+  List<Expense> _filteredExpenses = [];
+  double _totalRevenue = 0.0;
+  double _totalCosts = 0.0;
+  double _totalExpenses = 0.0;
   double _totalIncome = 0.0;
 
   void _calculateTax() {
@@ -103,7 +110,12 @@ class _TaxingPageState extends State<TaxingPage> {
     final income = totalRevenue - totalCosts - totalExpenses;
     
     setState(() {
-      _filteredItems = itemsSold; // Keep sold items for display
+      _itemsSold = itemsSold;
+      _itemsBought = itemsBought;
+      _filteredExpenses = filteredExpenses;
+      _totalRevenue = totalRevenue;
+      _totalCosts = totalCosts;
+      _totalExpenses = totalExpenses;
       _totalIncome = income;
       _taxesService = TaxesService(income);
       _calculated = true;
@@ -163,6 +175,22 @@ class _TaxingPageState extends State<TaxingPage> {
           ],
         ),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.settings),
+            tooltip: 'Manage Taxes',
+            onPressed: () async {
+              await showDialog(
+                context: context,
+                builder: (context) => TaxManagementDialog(),
+              );
+              // Recalculate if taxes were changed
+              if (_calculated) {
+                _calculateTax();
+              }
+            },
+          ),
+        ],
       ),
       body: ListView(
         padding: EdgeInsets.all(16),
@@ -292,7 +320,7 @@ class _TaxingPageState extends State<TaxingPage> {
                         style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                       ),
                       Text(
-                        '${_filteredItems.length}',
+                        '${_itemsSold.length}',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -314,6 +342,189 @@ class _TaxingPageState extends State<TaxingPage> {
                         ),
                       ),
                     ],
+                  ),
+                ],
+              ),
+            ),
+            
+            SizedBox(height: 16),
+            
+            // Detailed Breakdown
+            Card(
+              elevation: 2,
+              child: ExpansionTile(
+                title: Text(
+                  'Detailed Calculation Breakdown',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                initiallyExpanded: false,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Items Sold Section
+                        Text(
+                          'Items Sold (Revenue):',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        if (_itemsSold.isEmpty)
+                          Padding(
+                            padding: EdgeInsets.only(left: 16, bottom: 8),
+                            child: Text(
+                              'No items sold in this period',
+                              style: TextStyle(color: Colors.grey[600], fontStyle: FontStyle.italic),
+                            ),
+                          )
+                        else
+                          ..._itemsSold.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final item = entry.value;
+                            return Padding(
+                              padding: EdgeInsets.only(left: 16, bottom: 4),
+                              child: Text(
+                                '${index + 1}) ${item.name}: £${item.soldPrice.toStringAsFixed(2)}',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            );
+                          }).toList(),
+                        Padding(
+                          padding: EdgeInsets.only(left: 16, top: 4, bottom: 16),
+                          child: Text(
+                            'Total Revenue: £${_totalRevenue.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green[700],
+                            ),
+                          ),
+                        ),
+                        
+                        Divider(),
+                        
+                        // Items Bought Section
+                        Text(
+                          'Items Bought (Costs):',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red[700],
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        if (_itemsBought.isEmpty)
+                          Padding(
+                            padding: EdgeInsets.only(left: 16, bottom: 8),
+                            child: Text(
+                              'No items bought in this period',
+                              style: TextStyle(color: Colors.grey[600], fontStyle: FontStyle.italic),
+                            ),
+                          )
+                        else
+                          ..._itemsBought.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final item = entry.value;
+                            return Padding(
+                              padding: EdgeInsets.only(left: 16, bottom: 4),
+                              child: Text(
+                                '${index + 1}) ${item.name}: £${item.costPrice.toStringAsFixed(2)}',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            );
+                          }).toList(),
+                        Padding(
+                          padding: EdgeInsets.only(left: 16, top: 4, bottom: 16),
+                          child: Text(
+                            'Total Costs: £${_totalCosts.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red[700],
+                            ),
+                          ),
+                        ),
+                        
+                        Divider(),
+                        
+                        // Expenses Section
+                        Text(
+                          'Other Expenses:',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange[700],
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        if (_filteredExpenses.isEmpty)
+                          Padding(
+                            padding: EdgeInsets.only(left: 16, bottom: 8),
+                            child: Text(
+                              'No expenses in this period',
+                              style: TextStyle(color: Colors.grey[600], fontStyle: FontStyle.italic),
+                            ),
+                          )
+                        else
+                          ..._filteredExpenses.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final expense = entry.value;
+                            return Padding(
+                              padding: EdgeInsets.only(left: 16, bottom: 4),
+                              child: Text(
+                                '${index + 1}) ${expense.name}: £${expense.amount.toStringAsFixed(2)}',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            );
+                          }).toList(),
+                        Padding(
+                          padding: EdgeInsets.only(left: 16, top: 4, bottom: 16),
+                          child: Text(
+                            'Total Expenses: £${_totalExpenses.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange[700],
+                            ),
+                          ),
+                        ),
+                        
+                        Divider(thickness: 2),
+                        SizedBox(height: 8),
+                        
+                        // Final Calculation
+                        Text(
+                          'Calculation:',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 8),
+                        Padding(
+                          padding: EdgeInsets.only(left: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Revenue: £${_totalRevenue.toStringAsFixed(2)}'),
+                              Text('- Costs: £${_totalCosts.toStringAsFixed(2)}'),
+                              Text('- Expenses: £${_totalExpenses.toStringAsFixed(2)}'),
+                              Divider(),
+                              Text(
+                                'Taxable Income: £${_totalIncome.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: _totalIncome >= 0 ? Colors.green : Colors.red,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

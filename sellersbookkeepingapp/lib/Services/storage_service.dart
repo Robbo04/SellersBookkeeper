@@ -323,11 +323,11 @@ class StorageService {
     await taxesBox.clear();
     
     final defaultTaxes = [
-      Tax('Basic Tax (£12,570 < income <= £50,270)', 0.20, 12570, 50270),
-      Tax('Higher Tax (income > £50,270)', 0.40, 50270, null),
-      Tax('National Insurance (£12,570 < income <= £50,270)', 0.08, 12570, 50270),
+      Tax('Basic Tax (£12,570 < income <= £52,750)', 0.20, 12570, 52750),
+      Tax('Higher Tax (income > £52,750)', 0.40, 52750, null),
+      Tax('National Insurance (£12,570 < income <= £50,270)', 0.06, 12570, 50270),
       Tax('National Insurance 2 (income > £50,270)', 0.02, 50270, null),
-      Tax('Student Loan (income > £25,000)', 0.09, 25000, null),
+      Tax('Student Loan (income > £28,470)', 0.09, 28470, null),
     ];
     
     for (final tax in defaultTaxes) {
