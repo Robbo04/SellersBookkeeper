@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../Pages/manage_items_page.dart';
-import '../Pages/date_month_year_page.dart';
 import '../Pages/taxing_page.dart';
 import '../Pages/summary_page.dart';
 
@@ -14,7 +13,6 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
 
   final List<Widget> _pages = [
     ManageItemsPage(),
-    DateMonthYearPage(),
     TaxingPage(),
     SummaryPage(),
   ];
@@ -38,7 +36,6 @@ class _MainTabScaffoldState extends State<MainTabScaffold> {
         onTap: _onItemTapped,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Items'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Dates'),
           BottomNavigationBarItem(icon: Icon(Icons.attach_money_rounded), label: 'Taxing'),
           BottomNavigationBarItem(icon: Icon(Icons.addchart), label: 'Summary'),
         ],
