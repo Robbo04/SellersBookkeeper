@@ -61,7 +61,8 @@ class _TaxingPageState extends State<TaxingPage> {
     
     // Filter items sold within the date range (for revenue)
     final itemsSold = allItems.where((item) {
-      if (item.soldDate == null) return false;
+      // Only include items that are currently marked as sold
+      if (!item.isSold || item.soldDate == null) return false;
       
       final soldDate = DateTime(
         item.soldDate!.year,

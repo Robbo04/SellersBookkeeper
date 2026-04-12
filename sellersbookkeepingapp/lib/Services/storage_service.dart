@@ -214,7 +214,7 @@ class StorageService {
     
     return allItems.where((item) {
       bool matchesBoughtDate = _dateMatches(item.boughtDate, selectedDate, filterType);
-      bool matchesSoldDate = item.soldDate != null && 
+      bool matchesSoldDate = item.isSold && item.soldDate != null && 
                              _dateMatches(item.soldDate!, selectedDate, filterType);
       
       return matchesBoughtDate || matchesSoldDate;
@@ -266,15 +266,15 @@ class StorageService {
     final filteredItems = getItemsByDateFilter(filterType, selectedDate);
     
     if (filterType == DateFilterType.all) {
-      return filteredItems.where((item) => item.soldDate != null).toList();
+      return filteredItems.where((item) => item.isSold && item.soldDate != null).toList();
     }
     
     if (selectedDate == null) {
-      return filteredItems.where((item) => item.soldDate != null).toList();
+      return filteredItems.where((item) => item.isSold && item.soldDate != null).toList();
     }
     
     return filteredItems.where((item) {
-      return item.soldDate != null && 
+      return item.isSold && item.soldDate != null && 
              _dateMatches(item.soldDate!, selectedDate, filterType);
     }).toList();
   }

@@ -47,7 +47,8 @@ List<MonthlyData> _calculateMonthlyData(DateTime startDate, DateTime endDate, Li
     
     // Filter items SOLD in this month (for revenue)
     final itemsSold = allItems.where((item) {
-      if (item.soldDate == null) return false;
+      // Only include items that are currently marked as sold
+      if (!item.isSold || item.soldDate == null) return false;
       
       final soldDate = DateTime(
         item.soldDate!.year,

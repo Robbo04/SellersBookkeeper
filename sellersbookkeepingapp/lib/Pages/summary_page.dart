@@ -53,7 +53,7 @@ class _SummaryPageState extends State<SummaryPage> {
     Map<String, int> monthlyData = {};
     const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
-    for (var item in allItems.where((item) => item.soldDate != null)) {
+    for (var item in allItems.where((item) => item.isSold && item.soldDate != null)) {
       final key = '${monthNames[item.soldDate!.month]} ${item.soldDate!.year}';
       monthlyData[key] = (monthlyData[key] ?? 0) + 1;
     }
@@ -66,7 +66,7 @@ class _SummaryPageState extends State<SummaryPage> {
     Map<String, double> monthlyProfit = {};
     const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
-    for (var item in allItems.where((item) => item.soldDate != null)) {
+    for (var item in allItems.where((item) => item.isSold && item.soldDate != null)) {
       final key = '${monthNames[item.soldDate!.month]} ${item.soldDate!.year}';
       monthlyProfit[key] = (monthlyProfit[key] ?? 0.0) + item.profit;
     }
@@ -78,7 +78,7 @@ class _SummaryPageState extends State<SummaryPage> {
   int get currentStreak {
     if (allItems.isEmpty) return 0;
     
-    final soldItems = allItems.where((item) => item.soldDate != null).toList();
+    final soldItems = allItems.where((item) => item.isSold && item.soldDate != null).toList();
     if (soldItems.isEmpty) return 0;
     
     soldItems.sort((a, b) => b.soldDate!.compareTo(a.soldDate!));
