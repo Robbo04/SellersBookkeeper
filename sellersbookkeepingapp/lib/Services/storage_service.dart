@@ -2,6 +2,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../Classes/item.dart';
 import '../Classes/pye_box.dart';
 import '../Classes/expense.dart';
+import '../Classes/tax.dart';
 import '../Enums/date_filter_type.dart';
 import '../Enums/item_status.dart';
 
@@ -9,6 +10,7 @@ class StorageService {
   static const String itemsBoxName = 'items';
   static const String boxesBoxName = 'boxes';
   static const String expensesBoxName = 'expenses';
+  static const String taxesBoxName = 'taxes';
   
   // Initialize Hive
   static Future<void> init() async {
@@ -19,6 +21,7 @@ class StorageService {
     Hive.registerAdapter(PyeBoxAdapter());
     Hive.registerAdapter(ItemStatusAdapter());
     Hive.registerAdapter(ExpenseAdapter());
+    Hive.registerAdapter(TaxAdapter());
     
     // Check if we need to migrate old data format
     await _migrateOldDataFormat();
@@ -27,6 +30,10 @@ class StorageService {
     await Hive.openBox<Item>(itemsBoxName);
     await Hive.openBox<PyeBox>(boxesBoxName);
     await Hive.openBox<Expense>(expensesBoxName);
+    await Hive.openBox<Tax>(taxesBoxName);
+    
+    // Initialize default taxes if empty
+    await _initializeDefaultTaxes();
   }
   
   // Migrate old boolean format to new enum format
@@ -60,6 +67,7 @@ class StorageService {
   static Box<Item> get itemsBox => Hive.box<Item>(itemsBoxName);
   static Box<PyeBox> get boxesBox => Hive.box<PyeBox>(boxesBoxName);
   static Box<Expense> get expensesBox => Hive.box<Expense>(expensesBoxName);
+  static Box<Tax> get taxesBox => Hive.box<Tax>(taxesBoxName);
   
   // ===== ITEMS OPERATIONS =====
   
@@ -276,10 +284,62 @@ class StorageService {
     return itemsBox.values.where((item) => item.isSold).length;
   }
   
+  // ===== TAXES OPERATIONS =====
+  
+  /// Initialize default UK taxes if the box is empty
+  static Future<void> _initializeDefaultTaxes() async {
+    if (taxesBox.isEmpty) {
+      await resetToDefaultTaxes();
+    }
+  }
+  
+  /// Get all taxes as a list
+  static List<Tax> getAllTaxes() {
+    return taxesBox.values.toList();
+  }
+  
+  /// Add a new tax
+  static Future<void> addTax(Tax tax) async {
+    await taxesBox.add(tax);
+  }
+  
+  /// Update an existing tax
+  static Future<void> updateTax(int index, Tax tax) async {
+    await taxesBox.putAt(index, tax);
+  }
+  
+  /// Delete a tax by index
+  static Future<void> deleteTax(int index) async {
+    await taxesBox.deleteAt(index);
+  }
+  
+  /// Clear all taxes
+  static Future<void> clearAllTaxes() async {
+    await taxesBox.clear();
+  }
+  
+  /// Reset taxes to UK defaults
+  static Future<void> resetToDefaultTaxes() async {
+    await taxesBox.clear();
+    
+    final defaultTaxes = [
+      Tax('Basic Tax (£12,570 < income <= £50,270)', 0.20, 12570, 50270),
+      Tax('Higher Tax (income > £50,270)', 0.40, 50270, null),
+      Tax('National Insurance (£12,570 < income <= £50,270)', 0.08, 12570, 50270),
+      Tax('National Insurance 2 (income > £50,270)', 0.02, 50270, null),
+      Tax('Student Loan (income > £25,000)', 0.09, 25000, null),
+    ];
+    
+    for (final tax in defaultTaxes) {
+      await taxesBox.add(tax);
+    }
+  }
+  
   /// Close all boxes (call when app closes)
   static Future<void> closeAll() async {
     await itemsBox.close();
     await boxesBox.close();
     await expensesBox.close();
+    await taxesBox.close();
   }
 }

@@ -1,8 +1,20 @@
+import 'package:hive/hive.dart';
+
+part 'tax.g.dart';
+
+@HiveType(typeId: 4)
 class Tax 
 {
+  @HiveField(0)
   String name;
+  
+  @HiveField(1)
   double rate;
+  
+  @HiveField(2)
   double minimumIncomeRequired;
+  
+  @HiveField(3)
   double? maxTaxedincome; // Made nullable
 
   double calculateTax(double income) {

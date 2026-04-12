@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sellersbookkeepingapp/Pages/manage_items_page.dart';
 import '../item.dart';
 import '../../Services/storage_service.dart';
 
