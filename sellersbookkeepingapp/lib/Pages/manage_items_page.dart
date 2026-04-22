@@ -22,6 +22,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
   // Filter state
   DateFilterType _dateFilter = DateFilterType.all;
   DateTime _selectedDate = DateTime.now();
+  bool _showOnlyUnsold = false;
 
   @override
   void initState() {
@@ -46,6 +47,11 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
   
   List<Item> _applyFilters(List<Item> allItems) {
     var filtered = allItems;
+    
+    // Sold/Unsold filter (excludes both sold and lost items)
+    if (_showOnlyUnsold) {
+      filtered = filtered.where((item) => !item.isSold && !item.isLost).toList();
+    }
     
     // Date filter
     if (_dateFilter != DateFilterType.all) {
@@ -590,8 +596,32 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
             if (_dateFilter != DateFilterType.all) ...[
               SizedBox(height: 12),
               _buildDatePicker(),
-            ],
-          ],
+            ],            SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.filter_list, size: 18, color: Colors.grey[700]),
+                SizedBox(width: 8),
+                Text(
+                  'Show only unsold items',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                Spacer(),
+                Switch(
+                  value: _showOnlyUnsold,
+                  onChanged: (value) {
+                    setState(() {
+                      _showOnlyUnsold = value;
+                      _loadItems();
+                    });
+                  },
+                  activeColor: Theme.of(context).colorScheme.primary,
+                ),
+              ],
+            ),          ],
         ),
       ),
     );
