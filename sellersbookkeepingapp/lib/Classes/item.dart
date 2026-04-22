@@ -76,16 +76,9 @@ class Item extends HiveObject {
 
   changeSellingPrice(double newPrice) {
    if (status != ItemStatus.sold) {
-    if (newPrice <= 0) {
-      // Show a warning dialog or message to the user
-      print('Error: Selling price must be greater than zero.');
-    }
-    else {
+    if (newPrice > 0) {
       sellingPrice = newPrice;
     }
-   }
-   else {
-    print('Error: Cannot change selling price of a sold item.');
    }
   }
 }

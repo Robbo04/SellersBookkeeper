@@ -115,9 +115,45 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
               Text('Clear All Data'),
             ],
           ),
-          content: Text(
-            'Are you sure you want to delete all items and boxes? This action cannot be undone.',
-            style: TextStyle(fontSize: 16),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber, color: Colors.red, size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'DEVELOPER TOOL',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Are you sure you want to delete all items, boxes, and expenses?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'This action cannot be undone and will permanently delete all data from the application.',
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -177,6 +213,211 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
                 Icon(Icons.error, color: Colors.white),
                 SizedBox(width: 8),
                 Text('Failed to clear data: $e'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportToJson() async {
+    try {
+      final success = await StorageService.exportToJson();
+      
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Data exported successfully'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.info, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Export cancelled'),
+                ],
+              ),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Failed to export data: $e'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showImportConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('Import from Backup'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber, color: Colors.orange, size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'DEVELOPER TOOL',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'This will replace all existing data with the backup file.',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Your current data will be permanently deleted. Make sure you have exported a backup first if needed.',
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _importFromJson();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Import'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _importFromJson() async {
+    try {
+      final success = await StorageService.importFromJson();
+      
+      if (mounted) {
+        if (success) {
+          _loadItems();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Data imported successfully'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.info, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Import cancelled'),
+                ],
+              ),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text('Failed to import data: Invalid backup file'),
+                ),
               ],
             ),
             backgroundColor: Colors.red,
@@ -257,16 +498,103 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
             onSelected: (value) {
               if (value == 'clear_all') {
                 _showClearAllConfirmation();
+              } else if (value == 'export_json') {
+                _exportToJson();
+              } else if (value == 'import_json') {
+                _showImportConfirmation();
               }
             },
             itemBuilder: (BuildContext context) => [
               PopupMenuItem<String>(
-                value: 'clear_all',
-                child: Row(
+                value: 'export_json',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.delete_sweep, color: Colors.red),
-                    SizedBox(width: 12),
-                    Text('Clear All Data', style: TextStyle(color: Colors.red)),
+                    Row(
+                      children: [
+                        Icon(Icons.warning, color: Colors.orange, size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          'DEVELOPER ONLY',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.file_download, color: Colors.blue),
+                        SizedBox(width: 12),
+                        Text('Export to JSON', style: TextStyle(color: Colors.blue)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'import_json',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.warning, color: Colors.orange, size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          'DEVELOPER ONLY',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.file_upload, color: Colors.green),
+                        SizedBox(width: 12),
+                        Text('Import from JSON', style: TextStyle(color: Colors.green)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'clear_all',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.warning, color: Colors.orange, size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          'DEVELOPER ONLY',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.delete_sweep, color: Colors.red),
+                        SizedBox(width: 12),
+                        Text('Clear All Data', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
                   ],
                 ),
               ),

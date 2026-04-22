@@ -280,7 +280,7 @@ class _SummaryPageState extends State<SummaryPage> {
       children: [
         _buildLargeStatCard(
           'Total Profit',
-          '\$${totalProfit.toStringAsFixed(2)}',
+          '£${totalProfit.toStringAsFixed(2)}',
           Icons.trending_up,
           profitColor,
           subtitle: '${profitMargin.toStringAsFixed(1)}% margin',
@@ -291,7 +291,7 @@ class _SummaryPageState extends State<SummaryPage> {
             Expanded(
               child: _buildStatCard(
                 'Revenue',
-                '\$${totalRevenue.toStringAsFixed(2)}',
+                '£${totalRevenue.toStringAsFixed(2)}',
                 Icons.attach_money,
                 Colors.teal,
               ),
@@ -300,7 +300,7 @@ class _SummaryPageState extends State<SummaryPage> {
             Expanded(
               child: _buildStatCard(
                 'Spent',
-                '\$${totalSpent.toStringAsFixed(2)}',
+                '£${totalSpent.toStringAsFixed(2)}',
                 Icons.shopping_cart,
                 Colors.indigo,
               ),
@@ -521,7 +521,7 @@ class _SummaryPageState extends State<SummaryPage> {
                       ),
                       SizedBox(width: 8),
                       Text(
-                        '\$${profit.toStringAsFixed(2)}',
+                        '£${profit.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,

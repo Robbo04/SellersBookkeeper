@@ -1,5 +1,5 @@
 name: sellersbookkeepingapp
-description: "A new Flutter project."
+description: "Sellers Bookkeeper - A comprehensive inventory and bookkeeping application for sellers"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -49,6 +49,9 @@ dependencies:
   
   # For file system access
   path_provider: ^2.1.0
+  
+  # For file picking (save/load dialogs)
+  file_picker: ^8.1.6
 
 dev_dependencies:
   flutter_test:

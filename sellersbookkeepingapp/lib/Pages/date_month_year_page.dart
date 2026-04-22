@@ -361,7 +361,7 @@ class _DateMonthYearPageState extends State<DateMonthYearPage> {
         Expanded(
           child: _buildStatCard(
             'Profit',
-            '\$${_getTotalProfit().toStringAsFixed(2)}',
+            '£${_getTotalProfit().toStringAsFixed(2)}',
             Icons.trending_up,
             _getTotalProfit() >= 0 ? Colors.green : Colors.red,
           ),

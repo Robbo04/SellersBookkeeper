@@ -1,4 +1,7 @@
 import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import '../Classes/item.dart';
 import '../Classes/pye_box.dart';
 import '../Classes/expense.dart';
@@ -51,15 +54,10 @@ class StorageService {
       
       await tempBox.close();
     } catch (e) {
-      // If we get a type error, delete the old incompatible boxes
-      print('Detected old data format, clearing to migrate to new enum format...');
-      print('Error: $e');
-      
+      // If we get a type error, delete the old incompatible boxes to migrate to new enum format
       // Delete the box files to clear old data
       await Hive.deleteBoxFromDisk(itemsBoxName);
       await Hive.deleteBoxFromDisk(boxesBoxName);
-      
-      print('Migration complete - old data cleared');
     }
   }
   
@@ -373,6 +371,225 @@ class StorageService {
     for (final tax in defaultTaxes) {
       await taxesBox.add(tax);
     }
+  }
+  
+  /// Export all data to JSON file
+  static Future<bool> exportToJson() async {
+    try {
+      // Get all data
+      final allItems = getAllItemsIncludingBoxes();
+      final boxes = getAllBoxes();
+      final expenses = getAllExpenses();
+      final taxes = getAllTaxes();
+      
+      // Filter to get only standalone items (not items inside boxes)
+      final standaloneItems = allItems.where((item) => 
+        item.boxName == null || item.boxName!.isEmpty
+      ).toList();
+      
+      // Convert to JSON-serializable format
+      final data = {
+        'exportDate': DateTime.now().toIso8601String(),
+        'appVersion': '1.0.0',
+        'items': standaloneItems.map((item) => {
+          'name': item.name,
+          'boughtFrom': item.boughtFrom,
+          'boughtDate': item.boughtDate.toIso8601String(),
+          'status': item.status.toString(),
+          'sellingPrice': item.sellingPrice,
+          'retailPrice': item.retailPrice,
+          'costPrice': item.costPrice,
+          'soldPrice': item.soldPrice,
+          'soldDate': item.soldDate?.toIso8601String(),
+          'daysToSell': item.daysToSell,
+          'boxName': item.boxName,
+        }).toList(),
+        'boxes': boxes.map((box) => {
+          'id': box.id,
+          'date': box.date.toIso8601String(),
+          'name': box.name,
+          'totalPaidPrice': box.totalPaidPrice,
+          'items': box.items.map((item) => {
+            'name': item.name,
+            'boughtFrom': item.boughtFrom,
+            'boughtDate': item.boughtDate.toIso8601String(),
+            'status': item.status.toString(),
+            'sellingPrice': item.sellingPrice,
+            'retailPrice': item.retailPrice,
+            'costPrice': item.costPrice,
+            'soldPrice': item.soldPrice,
+            'soldDate': item.soldDate?.toIso8601String(),
+            'daysToSell': item.daysToSell,
+          }).toList(),
+        }).toList(),
+        'expenses': expenses.map((expense) => {
+          'name': expense.name,
+          'amount': expense.amount,
+          'date': expense.date.toIso8601String(),
+        }).toList(),
+        'taxes': taxes.map((tax) => {
+          'name': tax.name,
+          'rate': tax.rate,
+          'minimumIncomeRequired': tax.minimumIncomeRequired,
+          'maxTaxedincome': tax.maxTaxedincome,
+        }).toList(),
+      };
+      
+      // Convert to JSON string
+      final jsonString = JsonEncoder.withIndent('  ').convert(data);
+      
+      // Let user choose save location
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save Backup',
+        fileName: 'sellers_bookkeeper_backup_${DateTime.now().toString().replaceAll(':', '-').split('.')[0]}.json',
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+      
+      if (result != null) {
+        final file = File(result);
+        await file.writeAsString(jsonString);
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  /// Import all data from JSON file
+  static Future<bool> importFromJson() async {
+    try {
+      // Let user pick a JSON file
+      final result = await FilePicker.platform.pickFiles(
+        dialogTitle: 'Select Backup File',
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        allowMultiple: false,
+      );
+      
+      if (result == null || result.files.isEmpty) {
+        return false; // User cancelled
+      }
+      
+      final file = File(result.files.single.path!);
+      final jsonString = await file.readAsString();
+      final data = jsonDecode(jsonString) as Map<String, dynamic>;
+      
+      // Validate basic structure
+      if (!data.containsKey('items') || !data.containsKey('boxes') || 
+          !data.containsKey('expenses') || !data.containsKey('taxes')) {
+        throw Exception('Invalid backup file format');
+      }
+      
+      // Clear existing data
+      await clearAllItems();
+      await clearAllBoxes();
+      await clearAllExpenses();
+      await clearAllTaxes();
+      
+      // Import boxes first
+      final boxesData = data['boxes'] as List<dynamic>;
+      int boxIdCounter = 0;
+      for (var boxData in boxesData) {
+        final boxItems = (boxData['items'] as List<dynamic>).map((itemData) {
+          return Item(
+            name: itemData['name'] as String,
+            boughtFrom: itemData['boughtFrom'] as String? ?? '',
+            boughtDate: DateTime.parse(itemData['boughtDate'] as String),
+            status: _parseItemStatus(itemData['status'] as String),
+            sellingPrice: (itemData['sellingPrice'] as num).toDouble(),
+            retailPrice: (itemData['retailPrice'] as num).toDouble(),
+            costPrice: (itemData['costPrice'] as num).toDouble(),
+            soldPrice: (itemData['soldPrice'] as num).toDouble(),
+            soldDate: itemData['soldDate'] != null 
+                ? DateTime.parse(itemData['soldDate'] as String) 
+                : null,
+          )..daysToSell = itemData['daysToSell'] as int?;
+        }).toList();
+        
+        // Handle old JSON files that don't have id/date fields
+        final boxId = boxData['id'] as int? ?? boxIdCounter++;
+        final boxDate = boxData['date'] != null 
+            ? DateTime.parse(boxData['date'] as String)
+            : DateTime.now();
+        
+        final box = PyeBox(
+          id: boxId,
+          date: boxDate,
+          name: boxData['name'] as String?,
+          totalPaidPrice: (boxData['totalPaidPrice'] as num).toDouble(),
+          items: boxItems,
+        );
+        
+        await addBox(box);
+      }
+      
+      // Import standalone items
+      final itemsData = data['items'] as List<dynamic>;
+      for (var itemData in itemsData) {
+        final item = Item(
+          name: itemData['name'] as String,
+          boughtFrom: itemData['boughtFrom'] as String? ?? '',
+          boughtDate: DateTime.parse(itemData['boughtDate'] as String),
+          status: _parseItemStatus(itemData['status'] as String),
+          sellingPrice: (itemData['sellingPrice'] as num).toDouble(),
+          retailPrice: (itemData['retailPrice'] as num).toDouble(),
+          costPrice: (itemData['costPrice'] as num).toDouble(),
+          soldPrice: (itemData['soldPrice'] as num).toDouble(),
+          soldDate: itemData['soldDate'] != null 
+              ? DateTime.parse(itemData['soldDate'] as String) 
+              : null,
+          boxName: itemData['boxName'] as String?,
+        )..daysToSell = itemData['daysToSell'] as int?;
+        
+        await addItem(item);
+      }
+      
+      // Import expenses
+      final expensesData = data['expenses'] as List<dynamic>;
+      for (var expenseData in expensesData) {
+        final expense = Expense(
+          name: expenseData['name'] as String,
+          amount: (expenseData['amount'] as num).toDouble(),
+          date: DateTime.parse(expenseData['date'] as String),
+        );
+        
+        await addExpense(expense);
+      }
+      
+      // Import taxes
+      final taxesData = data['taxes'] as List<dynamic>;
+      for (var taxData in taxesData) {
+        final tax = Tax(
+          taxData['name'] as String,
+          (taxData['rate'] as num).toDouble(),
+          (taxData['minimumIncomeRequired'] as num).toDouble(),
+          taxData['maxTaxedincome'] != null 
+              ? (taxData['maxTaxedincome'] as num).toDouble() 
+              : null,
+        );
+        
+        await taxesBox.add(tax);
+      }
+      
+      return true;
+    } catch (e) {
+      // If import fails, try to restore default state
+      await clearAllItems();
+      await clearAllBoxes();
+      await clearAllExpenses();
+      await resetToDefaultTaxes();
+      rethrow;
+    }
+  }
+  
+  /// Helper to parse ItemStatus from string
+  static ItemStatus _parseItemStatus(String status) {
+    if (status.contains('sold')) return ItemStatus.sold;
+    if (status.contains('lost')) return ItemStatus.lost;
+    return ItemStatus.listed;
   }
   
   /// Close all boxes (call when app closes)
