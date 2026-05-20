@@ -69,9 +69,9 @@ class ItemDetailSheet extends StatelessWidget {
           _buildActionButton(
             context,
             icon: Icons.edit,
-            label: 'Change Listing Price',
+            label: 'Edit Item',
             color: Colors.blue,
-            onPressed: () => _showPriceDialog(context, item, index),
+            onPressed: () => _showEditItemDialog(context, item),
           ),
           SizedBox(height: 8),
 
@@ -122,19 +122,67 @@ class ItemDetailSheet extends StatelessWidget {
     );
   }
 
-  void _showPriceDialog(BuildContext context, Item item, int index) {
-    final controller = TextEditingController(text: item.sellingPrice.toString());
+  void _showEditItemDialog(BuildContext context, Item item) {
+    final nameController = TextEditingController(text: item.name);
+    final boughtFromController = TextEditingController(text: item.boughtFrom);
+    final costPriceController = TextEditingController(
+      text: item.costPrice != null ? item.costPrice.toString() : '',
+    );
+    final sellingPriceController = TextEditingController(text: item.sellingPrice.toString());
+    final retailPriceController = TextEditingController(text: item.retailPrice.toString());
     
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Update Listing Price'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            hintText: 'Enter new price',
-            border: OutlineInputBorder(),
+        title: Text('Edit Item'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: 'Item Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 12),
+              TextField(
+                controller: boughtFromController,
+                decoration: InputDecoration(
+                  labelText: 'Bought From',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 12),
+              TextField(
+                controller: costPriceController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Cost Price (Optional)',
+                  border: OutlineInputBorder(),
+                  hintText: 'Leave empty if no cost',
+                ),
+              ),
+              SizedBox(height: 12),
+              TextField(
+                controller: sellingPriceController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Selling Price',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 12),
+              TextField(
+                controller: retailPriceController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Retail Price',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
@@ -144,13 +192,28 @@ class ItemDetailSheet extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              item.changeSellingPrice(double.parse(controller.text));
+              // Update item fields
+              item.name = nameController.text.trim();
+              item.boughtFrom = boughtFromController.text.trim();
+              item.costPrice = costPriceController.text.trim().isEmpty 
+                  ? null 
+                  : double.tryParse(costPriceController.text);
+              item.sellingPrice = double.tryParse(sellingPriceController.text) ?? item.sellingPrice;
+              item.retailPrice = double.tryParse(retailPriceController.text) ?? item.retailPrice;
+              
               StorageService.updateItemFromCombinedList(item);
               onItemUpdated();
-              Navigator.pop(context);
-              Navigator.pop(context);
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Close detail sheet
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Item updated successfully'),
+                  backgroundColor: Colors.blue,
+                ),
+              );
             },
-            child: Text('Update'),
+            child: Text('Save'),
           ),
         ],
       ),

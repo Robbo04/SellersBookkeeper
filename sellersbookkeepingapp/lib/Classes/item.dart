@@ -6,7 +6,7 @@ part 'item.g.dart';
 @HiveType(typeId: 0)
 class Item extends HiveObject {
   @HiveField(0)
-  final String name;
+  String name;
   
   @HiveField(1, defaultValue: '')
   String boughtFrom = '';

@@ -42,6 +42,12 @@ class StorageService {
   // Migrate old boolean format to new enum format
   static Future<void> _migrateOldDataFormat() async {
     try {
+      // Check if box already exists and is compatible
+      if (Hive.isBoxOpen(itemsBoxName)) {
+        // Box is already open, assume it's compatible
+        return;
+      }
+      
       // Try to open and read the box with old format
       final tempBox = await Hive.openBox(itemsBoxName);
       
@@ -52,12 +58,30 @@ class StorageService {
         tempBox.getAt(0);
       }
       
+      // Close the box properly and wait for it to complete
       await tempBox.close();
+      // Give the system time to release file handles
+      await Future.delayed(Duration(milliseconds: 100));
     } catch (e) {
-      // If we get a type error, delete the old incompatible boxes to migrate to new enum format
-      // Delete the box files to clear old data
-      await Hive.deleteBoxFromDisk(itemsBoxName);
-      await Hive.deleteBoxFromDisk(boxesBoxName);
+      // If we get a type error, need to delete the old incompatible boxes
+      try {
+        // Ensure box is closed before attempting deletion
+        if (Hive.isBoxOpen(itemsBoxName)) {
+          await Hive.box(itemsBoxName).close();
+          await Future.delayed(Duration(milliseconds: 100));
+        }
+        if (Hive.isBoxOpen(boxesBoxName)) {
+          await Hive.box(boxesBoxName).close();
+          await Future.delayed(Duration(milliseconds: 100));
+        }
+        
+        // Delete the box files to clear old data
+        await Hive.deleteBoxFromDisk(itemsBoxName);
+        await Hive.deleteBoxFromDisk(boxesBoxName);
+      } catch (deleteError) {
+        // If deletion fails, log it but continue - the app will try to work with existing data
+        print('Warning: Could not delete old Hive boxes during migration: $deleteError');
+      }
     }
   }
   
