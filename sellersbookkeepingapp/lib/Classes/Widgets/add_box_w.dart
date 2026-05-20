@@ -98,7 +98,6 @@ class _AddBoxWidgetState extends State<AddBoxWidget> {
                 sellingPrice: double.tryParse(listedPriceController.text) ?? 0.0,
                 retailPrice: double.tryParse(retailPriceController.text) ?? 0.0,
                 boughtDate: DateTime.now(),
-                boxName: _boxNameController.text.trim(),
               );
 
               setState(() {

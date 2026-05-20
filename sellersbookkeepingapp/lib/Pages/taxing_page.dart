@@ -92,10 +92,8 @@ class _TaxingPageState extends State<TaxingPage> {
     final totalRevenue = itemsSold.fold(0.0, (sum, item) => sum + item.soldPrice);
     
     // Calculate total costs (money spent on purchases)
-    // For standalone items, use their cost price
-    final standaloneItemsCost = itemsBought
-        .where((item) => item.boxName == null || item.boxName!.isEmpty)
-        .fold(0.0, (sum, item) => sum + item.costPrice);
+    final itemsCost = itemsBought
+        .fold(0.0, (sum, item) => sum + (item.costPrice ?? 0.0));
     
     // For boxes, get all boxes bought in the date range and add their totalPaidPrice
     final allBoxes = StorageService.getAllBoxes();
@@ -112,7 +110,7 @@ class _TaxingPageState extends State<TaxingPage> {
     
     final boxCosts = boxesBought.fold(0.0, (sum, box) => sum + box.totalPaidPrice);
     
-    final totalCosts = standaloneItemsCost + boxCosts;
+    final totalCosts = itemsCost + boxCosts;
     
     // Add other expenses within the date range
     final expenses = StorageService.getAllExpenses();
@@ -451,10 +449,8 @@ class _TaxingPageState extends State<TaxingPage> {
                             ),
                           )
                         else ...[                          
-                          // Standalone items
+                          // Items bought
                           ..._itemsBought
-                              .where((item) => item.boxName == null || item.boxName!.isEmpty)
-                              .toList()
                               .asMap()
                               .entries
                               .map((entry) {
@@ -463,14 +459,14 @@ class _TaxingPageState extends State<TaxingPage> {
                             return Padding(
                               padding: EdgeInsets.only(left: 16, bottom: 4),
                               child: Text(
-                                '${index + 1}) ${item.name}: £${item.costPrice.toStringAsFixed(2)}',
+                                '${index + 1}) ${item.name}: £${(item.costPrice ?? 0.0).toStringAsFixed(2)}',
                                 style: TextStyle(fontSize: 14),
                               ),
                             );
                           }).toList(),
                           // Boxes
                           ..._boxesBought.asMap().entries.map((entry) {
-                            final standaloneCount = _itemsBought.where((item) => item.boxName == null || item.boxName!.isEmpty).length;
+                            final standaloneCount = _itemsBought.length;
                             final index = entry.key;
                             final box = entry.value;
                             return Padding(

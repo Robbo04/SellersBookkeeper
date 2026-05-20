@@ -44,7 +44,9 @@ class _AddItemWidgetState extends State<AddItemWidget> {
     final newItem = Item(
       name: _nameController.text.trim(),
       boughtFrom: _purchasedFromController.text.trim(),
-      costPrice: double.tryParse(_paidPriceController.text) ?? 0.0,
+      costPrice: _paidPriceController.text.trim().isEmpty 
+          ? null 
+          : double.tryParse(_paidPriceController.text),
       sellingPrice: double.tryParse(_listedPriceController.text) ?? 0.0,
       retailPrice: double.tryParse(_retailPriceController.text) ?? 0.0,
       boughtDate: DateTime.now(),
@@ -110,7 +112,7 @@ class _AddItemWidgetState extends State<AddItemWidget> {
               Expanded(
                 child: TextField(
                   controller: _paidPriceController,
-                  decoration: _buildInputDecoration('Paid Price'),
+                  decoration: _buildInputDecoration('Paid Price (Optional)'),
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),

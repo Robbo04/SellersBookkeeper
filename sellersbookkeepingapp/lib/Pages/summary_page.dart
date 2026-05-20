@@ -43,13 +43,8 @@ class _SummaryPageState extends State<SummaryPage> {
     _cachedRemainingListedItems = allItems.where((item) => !item.isSold && !item.isLost).length;
     _cachedItemsLost = allItems.where((item) => item.isLost).length;
     
-    // Calculate total spent (including box costs)
-    final standaloneItemsCost = allItems
-        .where((item) => item.boxName == null || item.boxName!.isEmpty)
-        .fold(0.0, (sum, item) => sum + item.costPrice);
-    final boxes = StorageService.getAllBoxes();
-    final boxCosts = boxes.fold(0.0, (sum, box) => sum + box.totalPaidPrice);
-    _cachedTotalSpent = standaloneItemsCost + boxCosts;
+    // Calculate total spent from items with cost
+    _cachedTotalSpent = allItems.fold(0.0, (sum, item) => sum + (item.costPrice ?? 0.0));
     
     // Calculate average days to sell
     final soldItems = allItems.where((item) => item.isSold && item.daysToSell != null).toList();

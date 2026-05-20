@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../Classes/Widgets/add_item_w.dart';
-import '../Classes/Widgets/add_box_w.dart';
 import '../Classes/Widgets/add_expense_w.dart';
 import '../Classes/Widgets/item_card.dart';
 import '../Classes/Widgets/expense_card.dart';
@@ -886,32 +885,6 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
             icon: Icon(Icons.add),
             label: Text('Item'),
             backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-          SizedBox(width: 12),
-          
-          
-          FloatingActionButton.extended(
-            heroTag: "addBox",
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return Dialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: buildAddBoxWidget(
-                      onBoxAdded: () {
-                        _loadItems();
-                      },
-                    ),
-                  );
-                },
-              );
-            },
-            icon: Icon(Icons.add),
-            label: Text('Box'),
-            backgroundColor: Theme.of(context).colorScheme.secondary,
           ),
         ],
       ),

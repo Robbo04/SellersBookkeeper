@@ -23,8 +23,8 @@ class Item extends HiveObject {
   @HiveField(5, defaultValue: 0.0)
   double retailPrice;
   
-  @HiveField(6, defaultValue: 0.0)
-  double costPrice = 0.0;
+  @HiveField(6)
+  double? costPrice;
   
   @HiveField(7, defaultValue: 0.0)
   double soldPrice = 0.0;
@@ -35,25 +35,21 @@ class Item extends HiveObject {
   @HiveField(9)
   int? daysToSell = 0;
 
-  @HiveField(11, defaultValue: '')
-  String? boxName;
-
   // Convenience getters for backward compatibility
   bool get isSold => status == ItemStatus.sold;
   bool get isLost => status == ItemStatus.lost;
 
-  double get profit => soldPrice - costPrice;
+  double get profit => soldPrice - (costPrice ?? 0.0);
 
   Item({
     required this.name,
     this.boughtFrom = '',
     this.sellingPrice = 0.0,
+    this.costPrice,
     this.retailPrice = 0.0,
-    this.costPrice = 0.0,
     this.soldPrice = 0.0,
     required this.boughtDate,
     this.soldDate,
-    this.boxName,
     this.status = ItemStatus.listed,
   });
 

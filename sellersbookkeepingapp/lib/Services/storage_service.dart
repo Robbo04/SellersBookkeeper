@@ -146,43 +146,17 @@ class StorageService {
     await boxesBox.clear();
   }
   
-  /// Update an item within a box by finding the box and item
-  static Future<void> updateItemInBox(String boxName, String itemName, Item updatedItem) async {
-    final boxes = getAllBoxes();
-    
-    for (int i = 0; i < boxes.length; i++) {
-      final box = boxes[i];
-      if (box.name == boxName) {
-        // Find the item in this box
-        final itemIndex = box.items.indexWhere((item) => item.name == itemName);
-        if (itemIndex != -1) {
-          // Update the item in the box
-          box.items[itemIndex] = updatedItem;
-          // Save the updated box
-          await updateBox(i, box);
-          return;
-        }
-      }
-    }
-  }
-  
-  /// Update an item from the combined list (handles both standalone and box items)
+  /// Update an item from the items list
   static Future<void> updateItemFromCombinedList(Item itemToUpdate) async {
-    // Check if item is in a box
-    if (itemToUpdate.boxName != null && itemToUpdate.boxName!.isNotEmpty) {
-      // Update item in box
-      await updateItemInBox(itemToUpdate.boxName!, itemToUpdate.name, itemToUpdate);
-    } else {
-      // Find the item in standalone items
-      final standaloneItems = getAllItems();
-      final index = standaloneItems.indexWhere((item) => 
-        item.name == itemToUpdate.name && 
-        item.boughtDate == itemToUpdate.boughtDate
-      );
-      
-      if (index != -1) {
-        await updateItem(index, itemToUpdate);
-      }
+    // Find the item in items list
+    final items = getAllItems();
+    final index = items.indexWhere((item) => 
+      item.name == itemToUpdate.name && 
+      item.boughtDate == itemToUpdate.boughtDate
+    );
+    
+    if (index != -1) {
+      await updateItem(index, itemToUpdate);
     }
   }
   
@@ -382,16 +356,13 @@ class StorageService {
       final expenses = getAllExpenses();
       final taxes = getAllTaxes();
       
-      // Filter to get only standalone items (not items inside boxes)
-      final standaloneItems = allItems.where((item) => 
-        item.boxName == null || item.boxName!.isEmpty
-      ).toList();
+      // All items are now standalone (no box association)
       
       // Convert to JSON-serializable format
       final data = {
         'exportDate': DateTime.now().toIso8601String(),
         'appVersion': '1.0.0',
-        'items': standaloneItems.map((item) => {
+        'items': allItems.map((item) => {
           'name': item.name,
           'boughtFrom': item.boughtFrom,
           'boughtDate': item.boughtDate.toIso8601String(),
@@ -402,7 +373,6 @@ class StorageService {
           'soldPrice': item.soldPrice,
           'soldDate': item.soldDate?.toIso8601String(),
           'daysToSell': item.daysToSell,
-          'boxName': item.boxName,
         }).toList(),
         'boxes': boxes.map((box) => {
           'id': box.id,
@@ -536,12 +506,11 @@ class StorageService {
           status: _parseItemStatus(itemData['status'] as String),
           sellingPrice: (itemData['sellingPrice'] as num).toDouble(),
           retailPrice: (itemData['retailPrice'] as num).toDouble(),
-          costPrice: (itemData['costPrice'] as num).toDouble(),
+          costPrice: itemData['costPrice'] != null ? (itemData['costPrice'] as num).toDouble() : null,
           soldPrice: (itemData['soldPrice'] as num).toDouble(),
           soldDate: itemData['soldDate'] != null 
               ? DateTime.parse(itemData['soldDate'] as String) 
               : null,
-          boxName: itemData['boxName'] as String?,
         )..daysToSell = itemData['daysToSell'] as int?;
         
         await addItem(item);
