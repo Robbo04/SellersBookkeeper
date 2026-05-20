@@ -10,6 +10,18 @@ class SummaryPage extends StatefulWidget {
 class _SummaryPageState extends State<SummaryPage> {
   List<Item> allItems = [];
   
+  // Cached computed values to avoid recalculating on every build
+  int _cachedTotalSoldItems = 0;
+  double _cachedTotalRevenue = 0.0;
+  double _cachedTotalSpent = 0.0;
+  double _cachedTotalProfit = 0.0;
+  int _cachedRemainingListedItems = 0;
+  int _cachedItemsLost = 0;
+  double _cachedAverageDaysToSell = 0.0;
+  Map<String, int> _cachedSoldItemsByMonth = {};
+  Map<String, double> _cachedProfitByMonth = {};
+  int _cachedCurrentStreak = 0;
+  
   @override
   void initState() {
     super.initState();
@@ -19,100 +31,93 @@ class _SummaryPageState extends State<SummaryPage> {
   void _loadItems() {
     setState(() {
       allItems = StorageService.getAllItemsIncludingBoxes();
+      _computeAllMetrics();
     });
   }
   
-  // Calculate total sold items
-  int get totalSoldItems => allItems.where((item) => item.isSold).length;
-  
-  // Calculate total revenue
-  double get totalRevenue => allItems.fold(0.0, (sum, item) => sum + item.soldPrice);
-  
-  // Calculate total spent (including box costs)
-  double get totalSpent {
-    // Get standalone items cost
+  // Compute all metrics once when data changes
+  void _computeAllMetrics() {
+    _cachedTotalSoldItems = allItems.where((item) => item.isSold).length;
+    _cachedTotalRevenue = allItems.fold(0.0, (sum, item) => sum + item.soldPrice);
+    _cachedTotalProfit = allItems.where((item) => item.isSold).fold(0.0, (sum, item) => sum + item.profit);
+    _cachedRemainingListedItems = allItems.where((item) => !item.isSold && !item.isLost).length;
+    _cachedItemsLost = allItems.where((item) => item.isLost).length;
+    
+    // Calculate total spent (including box costs)
     final standaloneItemsCost = allItems
         .where((item) => item.boxName == null || item.boxName!.isEmpty)
         .fold(0.0, (sum, item) => sum + item.costPrice);
-    
-    // Get all box costs
     final boxes = StorageService.getAllBoxes();
     final boxCosts = boxes.fold(0.0, (sum, box) => sum + box.totalPaidPrice);
+    _cachedTotalSpent = standaloneItemsCost + boxCosts;
     
-    return standaloneItemsCost + boxCosts;
-  }
-  
-  // Calculate total profit
-  double get totalProfit => allItems.where((item) => item.isSold).fold(0.0, (sum, item) => sum + item.profit);
-  
-  // Calculate remaining listed items
-  int get remainingListedItems => allItems.where((item) => !item.isSold && !item.isLost).length;
-  
-  // Calculate items lost
-  int get itemsLost => allItems.where((item) => item.isLost).length;
-  
-  // Calculate average days to sell
-  double get averageDaysToSell {
+    // Calculate average days to sell
     final soldItems = allItems.where((item) => item.isSold && item.daysToSell != null).toList();
-    if (soldItems.isEmpty) return 0.0;
-    final totalDays = soldItems.fold(0, (sum, item) => sum + (item.daysToSell ?? 0));
-    return totalDays / soldItems.length;
-  }
-  
-  // Get sold items by month
-  Map<String, int> get soldItemsByMonth {
-    Map<String, int> monthlyData = {};
-    const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    if (soldItems.isEmpty) {
+      _cachedAverageDaysToSell = 0.0;
+    } else {
+      final totalDays = soldItems.fold(0, (sum, item) => sum + (item.daysToSell ?? 0));
+      _cachedAverageDaysToSell = totalDays / soldItems.length;
+    }
     
+    // Get sold items by month
+    _cachedSoldItemsByMonth = {};
+    const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     for (var item in allItems.where((item) => item.isSold && item.soldDate != null)) {
       final key = '${monthNames[item.soldDate!.month]} ${item.soldDate!.year}';
-      monthlyData[key] = (monthlyData[key] ?? 0) + 1;
+      _cachedSoldItemsByMonth[key] = (_cachedSoldItemsByMonth[key] ?? 0) + 1;
     }
     
-    return monthlyData;
-  }
-  
-  // Get profit by month
-  Map<String, double> get profitByMonth {
-    Map<String, double> monthlyProfit = {};
-    const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+    // Get profit by month
+    _cachedProfitByMonth = {};
     for (var item in allItems.where((item) => item.isSold && item.soldDate != null)) {
       final key = '${monthNames[item.soldDate!.month]} ${item.soldDate!.year}';
-      monthlyProfit[key] = (monthlyProfit[key] ?? 0.0) + item.profit;
+      _cachedProfitByMonth[key] = (_cachedProfitByMonth[key] ?? 0.0) + item.profit;
     }
     
-    return monthlyProfit;
+    // Calculate current streak (consecutive days with sales)
+    if (allItems.isEmpty) {
+      _cachedCurrentStreak = 0;
+    } else {
+      final soldItemsForStreak = allItems.where((item) => item.isSold && item.soldDate != null).toList();
+      if (soldItemsForStreak.isEmpty) {
+        _cachedCurrentStreak = 0;
+      } else {
+        soldItemsForStreak.sort((a, b) => b.soldDate!.compareTo(a.soldDate!));
+        
+        final today = DateTime.now();
+        final todayDate = DateTime(today.year, today.month, today.day);
+        
+        int streak = 0;
+        Set<DateTime> saleDays = {};
+        
+        for (var item in soldItemsForStreak) {
+          final saleDate = DateTime(item.soldDate!.year, item.soldDate!.month, item.soldDate!.day);
+          saleDays.add(saleDate);
+        }
+        
+        var checkDate = todayDate;
+        while (saleDays.contains(checkDate)) {
+          streak++;
+          checkDate = checkDate.subtract(Duration(days: 1));
+        }
+        
+        _cachedCurrentStreak = streak;
+      }
+    }
   }
   
-  // Calculate current streak (consecutive days with sales)
-  int get currentStreak {
-    if (allItems.isEmpty) return 0;
-    
-    final soldItems = allItems.where((item) => item.isSold && item.soldDate != null).toList();
-    if (soldItems.isEmpty) return 0;
-    
-    soldItems.sort((a, b) => b.soldDate!.compareTo(a.soldDate!));
-    
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-    
-    int streak = 0;
-    Set<DateTime> saleDays = {};
-    
-    for (var item in soldItems) {
-      final saleDate = DateTime(item.soldDate!.year, item.soldDate!.month, item.soldDate!.day);
-      saleDays.add(saleDate);
-    }
-    
-    var checkDate = todayDate;
-    while (saleDays.contains(checkDate)) {
-      streak++;
-      checkDate = checkDate.subtract(Duration(days: 1));
-    }
-    
-    return streak;
-  }
+  // Getters now return cached values instead of recalculating
+  int get totalSoldItems => _cachedTotalSoldItems;
+  double get totalRevenue => _cachedTotalRevenue;
+  double get totalSpent => _cachedTotalSpent;
+  double get totalProfit => _cachedTotalProfit;
+  int get remainingListedItems => _cachedRemainingListedItems;
+  int get itemsLost => _cachedItemsLost;
+  double get averageDaysToSell => _cachedAverageDaysToSell;
+  Map<String, int> get soldItemsByMonth => _cachedSoldItemsByMonth;
+  Map<String, double> get profitByMonth => _cachedProfitByMonth;
+  int get currentStreak => _cachedCurrentStreak;
   
   @override
   Widget build(BuildContext context) {

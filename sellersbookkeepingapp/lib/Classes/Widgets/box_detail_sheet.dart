@@ -169,7 +169,7 @@ class _BoxDetailSheetState extends State<BoxDetailSheet> {
           // Items List
           Flexible(
             child: ListView.builder(
-              shrinkWrap: true,
+              // Removed shrinkWrap for better performance - Flexible provides proper constraints
               padding: EdgeInsets.symmetric(horizontal: 16),
               itemCount: widget.box.items.length,
               itemBuilder: (context, index) {

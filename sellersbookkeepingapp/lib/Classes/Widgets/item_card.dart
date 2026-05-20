@@ -38,19 +38,10 @@ class ItemCard extends StatelessWidget {
         ? (item.profit >= 0 ? Colors.green : Colors.red)
         : Colors.grey;
 
-    return TweenAnimationBuilder(
-      duration: Duration(milliseconds: 300 + (index * 50)),
-      tween: Tween<double>(begin: 0, end: 1),
-      builder: (context, double value, child) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: Card(
+    // Optimize animations: only animate first 20 items for better performance with large lists
+    final shouldAnimate = index < 20;
+    
+    final Widget card = Card(
         margin: EdgeInsets.only(bottom: 8),
         elevation: 2,
         shadowColor: Colors.black26,
@@ -250,8 +241,24 @@ class ItemCard extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
+
+    // Return animated or non-animated widget based on index
+    if (shouldAnimate) {
+      return TweenAnimationBuilder(
+        duration: Duration(milliseconds: 200 + (index * 30)),
+        tween: Tween<double>(begin: 0, end: 1),
+        builder: (context, double value, child) {
+          return Opacity(
+            opacity: value,
+            child: child,
+          );
+        },
+        child: card,
+      );
+    } else {
+      return card;
+    }
   }
 
   Widget _buildCompactPrice(String label, double amount, IconData icon, Color color, {bool isProfit = false}) {

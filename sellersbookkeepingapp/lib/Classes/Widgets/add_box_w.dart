@@ -246,7 +246,7 @@ class _AddBoxWidgetState extends State<AddBoxWidget> {
                     ),
                   )
                 : ListView.builder(
-                    shrinkWrap: true,
+                    // Removed shrinkWrap for better performance - Expanded provides proper constraints
                     itemCount: _itemsInBox.length,
                     itemBuilder: (context, index) {
                       final item = _itemsInBox[index];

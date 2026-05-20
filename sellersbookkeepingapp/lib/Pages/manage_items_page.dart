@@ -16,8 +16,13 @@ class ManageItemsPage extends StatefulWidget {
 
 class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProviderStateMixin {
   List<Item> items = [];
+  List<Item> allFilteredItems = []; // Store all filtered items for pagination
   List<Expense> expenses = [];
   late AnimationController _animationController;
+  
+  // Pagination
+  static const int _pageSize = 50;
+  int _currentItemsToShow = _pageSize;
   
   // Filter state
   DateFilterType _dateFilter = DateFilterType.all;
@@ -40,10 +45,23 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
       final allExpenses = StorageService.getAllExpenses();
       
       // Apply filters
-      items = _applyFilters(allItems);
+      allFilteredItems = _applyFilters(allItems);
+      
+      // Apply pagination - show only the current page
+      items = allFilteredItems.take(_currentItemsToShow).toList();
+      
       expenses = _applyExpenseFilters(allExpenses);
     });
   }
+  
+  void _loadMoreItems() {
+    setState(() {
+      _currentItemsToShow += _pageSize;
+      items = allFilteredItems.take(_currentItemsToShow).toList();
+    });
+  }
+  
+  bool get _hasMoreItems => _currentItemsToShow < allFilteredItems.length;
   
   List<Item> _applyFilters(List<Item> allItems) {
     var filtered = allItems;
@@ -100,6 +118,9 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
 
   Future<void> _refreshItems() async {
     await Future.delayed(Duration(milliseconds: 500));
+    setState(() {
+      _currentItemsToShow = _pageSize; // Reset pagination on refresh
+    });
     _loadItems();
   }
 
@@ -697,7 +718,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      '${items.length}',
+                                      _hasMoreItems ? '${items.length} of ${allFilteredItems.length}' : '${items.length}',
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
@@ -710,7 +731,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
                             ),
                           ),
                           SliverPadding(
-                            padding: EdgeInsets.only(left: 12, right: 12, bottom: 100),
+                            padding: EdgeInsets.only(left: 12, right: 12, bottom: 12),
                             sliver: SliverList(
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
@@ -720,6 +741,26 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
                               ),
                             ),
                           ),
+                          // Load More Button
+                          if (_hasMoreItems) ...[
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                child: ElevatedButton.icon(
+                                  onPressed: _loadMoreItems,
+                                  icon: Icon(Icons.expand_more),
+                                  label: Text('Load More Items (${allFilteredItems.length - items.length} remaining)'),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                    foregroundColor: Theme.of(context).colorScheme.primary,
+                                    elevation: 0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                          SliverToBoxAdapter(child: SizedBox(height: 100)),
                         ],
                         
                         // Empty state for filtered results
@@ -943,6 +984,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
                   onChanged: (value) {
                     setState(() {
                       _showOnlyUnsold = value;
+                      _currentItemsToShow = _pageSize; // Reset pagination
                       _loadItems();
                     });
                   },
@@ -962,6 +1004,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
         onTap: () {
           setState(() {
             _dateFilter = type;
+            _currentItemsToShow = _pageSize; // Reset pagination
             _loadItems();
           });
         },
@@ -1005,6 +1048,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
           if (pickedDate != null) {
             setState(() {
               _selectedDate = pickedDate;
+              _currentItemsToShow = _pageSize; // Reset pagination
               _loadItems();
             });
           }
@@ -1141,6 +1185,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
     if (result != null) {
       setState(() {
         _selectedDate = result;
+        _currentItemsToShow = _pageSize; // Reset pagination
         _loadItems();
       });
     }
@@ -1171,6 +1216,7 @@ class _ManageItemsPageState extends State<ManageItemsPage> with SingleTickerProv
     if (pickedYear != null) {
       setState(() {
         _selectedDate = DateTime(pickedYear, 1, 1);
+        _currentItemsToShow = _pageSize; // Reset pagination
         _loadItems();
       });
     }
